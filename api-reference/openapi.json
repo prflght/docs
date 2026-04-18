@@ -1,152 +1,87 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
+    "title": "Prflght API",
+    "description": "Transaction firewall for AI agents on Solana. Simulate, policy-check, and attest transactions before they reach the chain.",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
-    }
-  ],
-  "security": [
-    {
-      "bearerAuth": []
+      "url": "https://api.prflght.xyz"
     }
   ],
   "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
+    "/check": {
       "post": {
-        "description": "Creates a new plant in the store",
+        "summary": "Validate and attest a transaction",
+        "description": "Submit a serialized Solana transaction for simulation, policy evaluation, and protocol health checks. Returns signed ed25519 attestation instructions on approval, or a denial reason on rejection.",
+        "operationId": "checkTransaction",
         "requestBody": {
-          "description": "Plant to add to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
-      "post": {
-        "description": "Information about a new plant added to the store",
-        "requestBody": {
-          "description": "Plant added to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/CheckRequest"
+              },
+              "example": {
+                "tx": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAHDg==",
+                "agentId": "4sGjMW1sUnHuiSFRhCAUt3pCkTaLRF1rBDUBGfVXvBb3"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
+            "description": "Transaction allowed — attestation instructions returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllowResponse"
+                },
+                "example": {
+                  "decision": "allow",
+                  "policyHash": "a3f9c12e8b4d7a0156ef23c9814bdf2e99c0a71d3b55f8e241d36a07c4e89f12",
+                  "expiry": 1713000060,
+                  "attestationIxs": [
+                    {
+                      "programId": "PrfLGHT11111111111111111111111111111111111111",
+                      "accounts": [
+                        {
+                          "pubkey": "4sGjMW1sUnHuiSFRhCAUt3pCkTaLRF1rBDUBGfVXvBb3",
+                          "isSigner": false,
+                          "isWritable": false
+                        }
+                      ],
+                      "data": "AjKx9mFp..."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Transaction denied — policy violation, protocol health failure, or simulation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenyResponse"
+                },
+                "example": {
+                  "decision": "deny",
+                  "reason": "notional exceeds policy max_notional_usdc (10000)"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request — missing or invalid fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -154,63 +89,86 @@
   },
   "components": {
     "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
+      "CheckRequest": {
         "type": "object",
+        "required": ["tx", "agentId"],
         "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
+          "tx": {
+            "type": "string",
+            "description": "Base64-encoded serialized Solana VersionedTransaction."
           },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
+          "agentId": {
+            "type": "string",
+            "description": "Agent wallet public key as a base58 string. Used to look up the governing policy."
           }
         }
       },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
+      "AttestationInstruction": {
+        "type": "object",
+        "properties": {
+          "programId": {
+            "type": "string",
+            "description": "Public key of the Prflght attestation program."
           },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
+          "accounts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pubkey": { "type": "string" },
+                "isSigner": { "type": "boolean" },
+                "isWritable": { "type": "boolean" }
               }
             }
+          },
+          "data": {
+            "type": "string",
+            "description": "Base64-encoded instruction data containing the signed attestation payload."
           }
-        ]
+        }
       },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
+      "AllowResponse": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": ["allow"]
+          },
+          "policyHash": {
+            "type": "string",
+            "description": "Hex string identifying the policy version evaluated. Use for audit trails."
+          },
+          "expiry": {
+            "type": "integer",
+            "description": "Unix timestamp (seconds) after which the attestation is invalid. Submit the transaction before this time."
+          },
+          "attestationIxs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AttestationInstruction" },
+            "description": "Instructions to prepend to your transaction before submitting on-chain."
+          }
+        }
+      },
+      "DenyResponse": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": ["deny"]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Human-readable explanation of why the transaction was denied."
+          }
+        }
+      },
+      "ErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
             "type": "string"
           }
         }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
       }
     }
   }
