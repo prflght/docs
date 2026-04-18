@@ -8,10 +8,7 @@ A policy defines what your agent is and isn't allowed to do on-chain. Policies a
 
 ## Managing policies
 
-You can create and update policies in two ways:
-
-- **Dashboard** — use the policy editor at [app.prflght.xyz](https://app.prflght.xyz) to configure rules with a visual interface and save them to your agent.
-- **Admin API** — manage policies programmatically via the admin API, useful for automated deployments and CI/CD workflows.
+Use the policy editor at [app.prflght.xyz](https://app.prflght.xyz) to configure rules and save them to your agent.
 
 <Warning>
   If no policy is configured for an agent, Prflght denies all transactions by default. Always set a policy before your agent begins sending transactions.
@@ -94,7 +91,7 @@ Policies are stored as JSON in the database. The example below shows every suppo
     **Required:** no
     **Example:** `60`
 
-    A health score threshold. Any transaction involving a protocol whose current health score is below this value is denied. Health scores are computed from live TVL data from DeFiLlama. See [Protocol Health](/concepts/protocol-health) for details on how scores are calculated.
+    A health score threshold. Any transaction involving a protocol whose current health score is below this value is denied. See [Protocol Health](/concepts/protocol-health) for details on how scores are calculated.
   </Accordion>
 </AccordionGroup>
 
