@@ -8,55 +8,24 @@ Prflght continuously monitors the health of the DeFi protocols your agent intera
 
 ## Monitored protocols
 
-Prflght currently monitors the following venues: Orca, Drift, Kamino, Raydium, Jupiter, and seven or more additional protocols. The full list is visible on your dashboard and in the response from the `GET /health` endpoint.
+Prflght currently monitors the following venues: Orca, Drift, Kamino, Raydium, Jupiter, and additional protocols. The full list is visible on your dashboard at [app.prflght.xyz](https://app.prflght.xyz).
 
 ## Health scores
 
-Each protocol is assigned a `healthScore` from 0 to 100, where 100 represents a fully healthy protocol. Scores are derived from live TVL data fetched from DeFiLlama. Each venue also has a `status` field:
+Each protocol is assigned a `healthScore` from 0 to 100, where 100 represents a fully healthy protocol. Scores are derived from live TVL data fetched from DeFiLlama. Health data feeds directly into the `POST /check` pipeline — you never need to query it separately.
 
-- **`healthy`** — the protocol is operating normally and its health score meets normal thresholds.
+Each venue also carries a status:
+
+- **`healthy`** — the protocol is operating normally.
 - **`warning`** — the protocol's health score has declined to a level that warrants caution.
-
-## Checking protocol health
-
-Use the `GET /health` endpoint to fetch the current health snapshot for all monitored protocols:
-
-<CodeGroup>
-
-```bash curl
-curl https://api.prflght.xyz/health
-```
-
-</CodeGroup>
-
-The response lists every monitored venue with its current score, TVL, and status:
-
-```json
-{
-  "venues": [
-    {
-      "id": "jupiter",
-      "healthScore": 95,
-      "tvlUsd": 2100000000,
-      "status": "healthy"
-    },
-    {
-      "id": "drift",
-      "healthScore": 42,
-      "tvlUsd": 180000000,
-      "status": "warning"
-    }
-  ]
-}
-```
 
 ## How health ties into your policy
 
 Two policy fields control how Prflght acts when protocol health changes:
 
-**`deny_if_protocol_health_below`** — set an integer threshold (0–100). Any transaction that involves a protocol whose `healthScore` is below this value is denied. For example, setting this to `60` means Prflght will block transactions to Drift in the example above, since its score of 42 is below the threshold.
+**`deny_if_protocol_health_below`** — set an integer threshold (0–100). Any transaction that involves a protocol whose `healthScore` is below this value is denied automatically during the `POST /check` call.
 
-**`pause_on_protocol_tvl_drop`** — set a map of protocol IDs to fractional drop thresholds. If a protocol's TVL drops by more than the specified fraction within the monitoring window, Prflght pauses your agent entirely, blocking all transactions until the TVL recovers or you manually resume the agent from the dashboard. A value of `0.15` for `drift` means a 15% TVL drop triggers the pause.
+**`pause_on_protocol_tvl_drop`** — set a map of protocol IDs to fractional drop thresholds. If a protocol's TVL drops by more than the specified fraction within the monitoring window, Prflght pauses your agent entirely, blocking all transactions until the TVL recovers or you manually resume from the dashboard.
 
 See [Policies](/concepts/policies) for the full policy field reference and a complete configuration example.
 
