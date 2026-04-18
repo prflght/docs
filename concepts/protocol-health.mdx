@@ -1,10 +1,10 @@
 ---
 title: "DeFi Protocol Health: TVL Monitoring and Risk Thresholds"
-description: "Prflght monitors live TVL from DeFiLlama for Orca, Drift, Jupiter, and more. Configure health thresholds to block or pause your agent automatically."
+description: "Prflght monitors live TVL for Orca, Drift, Jupiter, and more. Configure health thresholds to block or pause your agent automatically."
 sidebarTitle: "Protocol Health"
 ---
 
-Prflght continuously monitors the health of the DeFi protocols your agent interacts with, using live total value locked (TVL) data from DeFiLlama. Before approving any transaction, Prflght checks the current health of every protocol involved and can block the transaction or pause your agent if a protocol is under stress. This protects your agent from executing trades on venues that may be experiencing an exploit, a liquidity crisis, or other adverse conditions.
+Prflght continuously monitors the health of the DeFi protocols your agent interacts with. Before approving any transaction, Prflght checks the current health of every protocol involved and can block the transaction or pause your agent if a protocol is under stress. This protects your agent from executing trades on venues that may be experiencing an exploit, a liquidity crisis, or other adverse conditions.
 
 ## Monitored protocols
 
@@ -12,7 +12,7 @@ Prflght currently monitors the following venues: Orca, Drift, Kamino, Raydium, J
 
 ## Health scores
 
-Each protocol is assigned a `healthScore` from 0 to 100, where 100 represents a fully healthy protocol. Scores are derived from live TVL data fetched from DeFiLlama. Health data feeds directly into the `POST /check` pipeline — you never need to query it separately.
+Each protocol is assigned a `healthScore` from 0 to 100, where 100 represents a fully healthy protocol. Scores are derived from live on-chain data. Health data feeds directly into the `POST /check` pipeline — you never need to query it separately.
 
 Each venue also carries a status:
 
