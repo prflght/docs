@@ -16,7 +16,7 @@ Prflght sits between your AI agent and the Solana blockchain, acting as a firewa
     Prflght loads the policy configured for your agent from the database and evaluates the transaction against it. This includes checking the transaction's notional USDC value against `max_notional_usdc`, confirming every invoked program is in your `allowed_programs` list, verifying slippage does not exceed `max_slippage_bps`, and checking that the transaction would not breach your `daily_transfer_limit_usdc`. Any violation causes a denial with a specific reason.
   </Step>
   <Step title="Protocol health check">
-    For each DeFi protocol involved in the transaction, Prflght fetches live TVL data from DeFiLlama and computes a health score. If a protocol's score falls below your `deny_if_protocol_health_below` threshold, or if its TVL has dropped by more than the fraction configured in `pause_on_protocol_tvl_drop`, the transaction is blocked. This protects your agent from interacting with protocols that may be under stress or exploit.
+    For each DeFi protocol involved in the transaction, Prflght checks the current health score. If a protocol's score falls below your `deny_if_protocol_health_below` threshold, or if its TVL has dropped by more than the fraction configured in `pause_on_protocol_tvl_drop`, the transaction is blocked. This protects your agent from interacting with protocols that may be under stress or exploit.
   </Step>
   <Step title="ed25519 attestation">
     If the transaction passes all checks, Prflght signs an attestation using an ed25519 key pair. It returns a set of Solana instruction objects that you prepend to your transaction before submitting. When the transaction lands on-chain, the Prflght on-chain program verifies the attestation signature before allowing execution to continue. If the attestation is missing or invalid, the on-chain program rejects the transaction.
@@ -37,10 +37,4 @@ Every call to Prflght produces one of two outcomes:
 
 ## On-chain verification
 
-The Prflght on-chain program enforces that every transaction arriving at a protected program has a valid attestation prepended. The devnet program address is:
-
-```text
-G3QgEsSLHo5WH3sCCXekUzzQKZNjWct5SrxJpZxuqXQ8
-```
-
-This means even if an agent bypasses the Prflght API, the on-chain program will reject any unattested transaction. The attestation cannot be forged without Prflght's signing key, giving you a hard guarantee that your policy is enforced at the chain level.
+The Prflght on-chain program enforces that every transaction has a valid attestation prepended. Even if an agent bypasses the Prflght API, the on-chain program will reject any unattested transaction. The attestation cannot be forged without Prflght's signing key, giving you a hard guarantee that your policy is enforced at the chain level.
