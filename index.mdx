@@ -1,0 +1,49 @@
+---
+title: "Prflght: Transaction Firewall for AI Agents on Solana"
+description: "Prflght intercepts, simulates, and policy-checks every transaction your AI agent sends before it reaches the Solana blockchain. Set up in minutes."
+---
+
+Prflght is a transaction firewall that sits between your AI agent and the Solana blockchain. Before any transaction is submitted on-chain, Prflght simulates it, checks it against your agent's policy, and verifies the health of any DeFi protocols involved — only allowing the transaction through if it passes every check.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="bolt" href="/quickstart">
+    Connect your wallet, grab your API key, and protect your first transaction in minutes.
+  </Card>
+  <Card title="How It Works" icon="shield-check" href="/concepts/how-it-works">
+    Understand the simulation, policy evaluation, and attestation flow.
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/integrations/sdk">
+    Drop Prflght into any TypeScript agent with the `@prflght/sdk` package.
+  </Card>
+  <Card title="API Reference" icon="webhook" href="/api-reference/check">
+    Explore the REST endpoints your agent calls to check and approve transactions.
+  </Card>
+</CardGroup>
+
+## How Prflght protects your agent
+
+Every transaction your AI agent sends is automatically:
+
+1. **Simulated** against a live Solana RPC to catch failures before they hit the chain
+2. **Policy-checked** against your per-agent rules — notional limits, allowed programs, slippage caps, and daily transfer limits
+3. **Protocol health-verified** using live TVL data from DeFiLlama for Orca, Drift, Kamino, Raydium, Jupiter, and more
+4. **Attested** with a signed ed25519 signature that your on-chain program verifies before executing
+
+<Steps>
+  <Step title="Create your account">
+    Go to [app.prflght.xyz](https://app.prflght.xyz), connect your Solana wallet (Phantom or Solflare), and sign a message to authenticate. No password needed.
+  </Step>
+  <Step title="Configure your agent policy">
+    Set your agent's spending limits, allowed programs, and risk thresholds in the policy editor on the dashboard.
+  </Step>
+  <Step title="Integrate the SDK">
+    Install `@prflght/sdk` and wrap your transaction-sending code with a single `firewall.check()` call.
+  </Step>
+  <Step title="Send protected transactions">
+    Prflght returns attestation instructions you prepend to your transaction. Your on-chain program verifies the attestation before executing.
+  </Step>
+</Steps>
+
+<Note>
+  Prflght works with any Solana AI agent framework. Native plugins are available for [elizaOS](/integrations/elizaos-plugin) and [Solana Agent Kit](/integrations/solana-agent-kit).
+</Note>

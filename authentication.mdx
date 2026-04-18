@@ -1,0 +1,73 @@
+---
+title: "Authenticate with Prflght Using Your Solana Wallet"
+description: "Prflght uses wallet-based authentication — connect Phantom or Solflare, sign a message, and use your API key to authorize SDK requests."
+---
+
+Prflght authenticates you through your Solana wallet. There are no passwords or email-based accounts. You sign a message with your wallet to prove ownership, and the dashboard issues an API key you use to authorize all subsequent SDK calls.
+
+## Dashboard authentication
+
+1. Go to [app.prflght.xyz](https://app.prflght.xyz).
+2. Click **Connect wallet** and select **Phantom** or **Solflare**.
+3. Approve the connection in your wallet extension.
+4. Sign the authentication message when prompted. The message is plain text — it does not authorize any transaction or transfer of funds.
+
+Once you sign, the dashboard opens and your session is active. Sessions persist until you disconnect your wallet or revoke access from the dashboard.
+
+## API key
+
+Your API key is generated automatically when you first authenticate. Find it in the **API Keys** section of the dashboard.
+
+Use the API key alongside your agent's wallet public key when you initialize the `Firewall` client:
+
+```typescript
+import { Firewall } from '@prflght/sdk'
+
+const firewall = new Firewall({
+  apiUrl: 'https://api.prflght.xyz',
+  agentId: agentKeypair.publicKey.toString(), // base58 public key of your agent's wallet
+})
+```
+
+The `agentId` field must match the agent wallet you registered in the policy editor. Prflght uses this value to look up the correct policy and to verify that requests are coming from the expected agent.
+
+## Environment variables
+
+Store your credentials in environment variables rather than hardcoding them:
+
+```bash
+PRFLGHT_API_URL=https://api.prflght.xyz
+PRFLGHT_AGENT_ID=<agent wallet pubkey>
+```
+
+Then reference them in your SDK config:
+
+```typescript
+const firewall = new Firewall({
+  apiUrl: process.env.PRFLGHT_API_URL,
+  agentId: process.env.PRFLGHT_AGENT_ID,
+})
+```
+
+<Warning>
+  Never commit your API key to source control. Store it in a secrets manager, a `.env` file excluded from version control, or your deployment platform's secret storage. Anyone with your API key can submit firewall check requests on behalf of your agent.
+</Warning>
+
+## Authentication errors
+
+If the `agentId` in your SDK config does not match the wallet you registered, or if your API key is invalid or revoked, Prflght blocks the transaction and throws a `FirewallDenyError` with a descriptive reason. Check the `err.reason` field to distinguish an authentication failure from a policy violation:
+
+```typescript
+import { FirewallDenyError } from '@prflght/sdk'
+
+try {
+  const result = await firewall.check(txBase64)
+} catch (err) {
+  if (err instanceof FirewallDenyError) {
+    console.error('Blocked:', err.reason)
+    // e.g. "invalid API key" or "agentId mismatch"
+  }
+}
+```
+
+To rotate your API key, open the **API Keys** section of the dashboard, revoke the existing key, and generate a new one. Update your environment variables before restarting your agent.

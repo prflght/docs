@@ -1,0 +1,46 @@
+---
+title: "How Prflght Works: Simulation, Policy, and Attestation"
+description: "Learn how Prflght's four-stage pipeline — simulation, policy evaluation, protocol health check, and ed25519 attestation — protects every transaction."
+sidebarTitle: "How It Works"
+---
+
+Prflght sits between your AI agent and the Solana blockchain, acting as a firewall that every transaction must pass through before it can be executed on-chain. Your agent never sends a transaction directly; instead, it calls Prflght, which simulates, evaluates, and either approves or blocks the transaction — returning a cryptographic attestation that your on-chain program checks before proceeding.
+
+## The transaction check flow
+
+<Steps>
+  <Step title="Transaction simulation">
+    Prflght submits the transaction to a live Solana RPC in simulation mode. This catches execution failures — such as insufficient funds, account errors, or program panics — before anything is broadcast to the network. If the simulation fails, the transaction is denied immediately.
+  </Step>
+  <Step title="Policy evaluation">
+    Prflght evaluates the transaction against the policy file configured for your agent. This includes checking the transaction's notional USDC value against `max_notional_usdc`, confirming every invoked program is in your `allowed_programs` list, verifying slippage does not exceed `max_slippage_bps`, and checking that the transaction would not breach your `daily_transfer_limit_usdc`. Any violation causes a denial with a specific reason.
+  </Step>
+  <Step title="Protocol health check">
+    For each DeFi protocol involved in the transaction, Prflght fetches live TVL data from DeFiLlama and computes a health score. If a protocol's score falls below your `deny_if_protocol_health_below` threshold, or if its TVL has dropped by more than the fraction configured in `pause_on_protocol_tvl_drop`, the transaction is blocked. This protects your agent from interacting with protocols that may be under stress or exploit.
+  </Step>
+  <Step title="ed25519 attestation">
+    If the transaction passes all checks, Prflght signs an attestation using an ed25519 key pair. It returns a set of Solana instruction objects that you prepend to your transaction before submitting. When the transaction lands on-chain, the Prflght on-chain program verifies the attestation signature before allowing execution to continue. If the attestation is missing or invalid, the on-chain program rejects the transaction.
+  </Step>
+</Steps>
+
+## Allow and deny outcomes
+
+Every call to Prflght produces one of two outcomes:
+
+**Allow** — the transaction passed all checks. Prflght returns the attestation instructions to prepend. Your agent builds the final transaction, prepends those instructions, signs it, and submits it to the network.
+
+**Deny** — the transaction failed one or more checks. Prflght returns a `reason` string that identifies exactly which check failed and why. Your agent should surface this reason in logs or to the user so the problem can be diagnosed and corrected.
+
+<Note>
+  Every denied transaction includes a human-readable `reason` string in the response body. Log this string — it tells you whether the denial was due to a policy rule, a failed simulation, or a protocol health issue.
+</Note>
+
+## On-chain verification
+
+The Prflght on-chain program enforces that every transaction arriving at a protected program has a valid attestation prepended. The devnet program address is:
+
+```text
+G3QgEsSLHo5WH3sCCXekUzzQKZNjWct5SrxJpZxuqXQ8
+```
+
+This means even if an agent bypasses the Prflght API, the on-chain program will reject any unattested transaction. The attestation cannot be forged without Prflght's signing key, giving you a hard guarantee that your policy is enforced at the chain level.

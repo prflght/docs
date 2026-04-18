@@ -1,0 +1,96 @@
+---
+title: "Quick Start: Send Your First Protected Transaction"
+description: "Connect your wallet, set your agent policy, install the SDK, and send your first firewall-protected Solana transaction in under ten minutes."
+---
+
+Prflght protects your AI agent's transactions through a four-stage pipeline: simulation, policy evaluation, protocol health check, and on-chain attestation. This guide walks you through every step — from creating your account to sending your first protected transaction.
+
+<Steps>
+  <Step title="Connect your wallet">
+    Go to [app.prflght.xyz](https://app.prflght.xyz) and connect your Solana wallet. Prflght supports **Phantom** and **Solflare**. Once connected, sign the authentication message in your wallet. No password is required — your signature proves ownership of the wallet.
+  </Step>
+
+  <Step title="Copy your API key">
+    After authenticating, open the **API Keys** section of the dashboard and copy your API key. Keep this value secure — it authorizes all firewall checks made on behalf of your agent.
+  </Step>
+
+  <Step title="Set your agent policy">
+    Open the **Policy editor** on the dashboard and configure the rules for your agent:
+
+    - **Max notional** — the maximum USD value of a single transaction
+    - **Allowed programs** — a list of Solana program IDs your agent may interact with
+    - **Slippage limit** — the maximum acceptable slippage percentage
+    - **Daily transfer limit** — the cumulative USD value allowed per day
+
+    Save the policy. Prflght applies it to every transaction your agent submits.
+  </Step>
+
+  <Step title="Install the SDK">
+    Add `@prflght/sdk` to your project:
+
+    <CodeGroup>
+
+    ```bash npm
+    npm install @prflght/sdk
+    ```
+
+    ```bash bun
+    bun add @prflght/sdk
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Initialize the Firewall client">
+    Import `Firewall` and construct a client with your API URL and agent ID. The `agentId` is your agent's wallet public key as a base58 string.
+
+    ```typescript
+    import { Firewall, FirewallDenyError } from '@prflght/sdk'
+
+    const firewall = new Firewall({
+      apiUrl: process.env.PRFLGHT_API_URL,   // https://api.prflght.xyz
+      agentId: agentKeypair.publicKey.toString(),
+    })
+    ```
+  </Step>
+
+  <Step title="Check your transaction">
+    Before you send a transaction, pass its base64-encoded bytes to `firewall.check()`. Prflght simulates the transaction, evaluates it against your policy, and checks protocol health.
+
+    ```typescript
+    const result = await firewall.check(txBase64)
+    ```
+
+    If the transaction passes all checks, `result.instructions` contains the attestation instructions you must prepend to your transaction.
+
+    <Note>
+      You must prepend `result.instructions` to your transaction's instruction list. The on-chain program rejects any transaction that does not include a valid attestation.
+    </Note>
+  </Step>
+
+  <Step title="Prepend attestation instructions and send">
+    Build the final transaction with the attestation instructions first, then your own instructions, and submit it.
+
+    ```typescript
+    import { Firewall, FirewallDenyError } from '@prflght/sdk'
+
+    const firewall = new Firewall({
+      apiUrl: process.env.PRFLGHT_API_URL,
+      agentId: agentKeypair.publicKey.toString(),
+    })
+
+    try {
+      const result = await firewall.check(txBase64)
+      // Prepend attestation instructions before your own
+      const finalTx = buildTxWithIxs([...result.instructions, ...yourIxs])
+      await sendAndConfirm(finalTx)
+    } catch (err) {
+      if (err instanceof FirewallDenyError) {
+        console.error('Blocked:', err.reason) // e.g. "notional exceeds policy limit"
+      }
+    }
+    ```
+
+    `FirewallDenyError` is thrown when Prflght blocks the transaction. The `err.reason` field explains which check failed — use it to adjust your policy or debug your agent's behavior.
+  </Step>
+</Steps>

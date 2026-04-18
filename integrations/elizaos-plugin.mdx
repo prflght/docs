@@ -1,0 +1,58 @@
+---
+title: "elizaOS Plugin for Prflght Transaction Firewall"
+description: "Add @prflght/elizaos-plugin to your elizaOS agent to automatically firewall every transaction and inject live policy data into prompts."
+sidebarTitle: "elizaOS Plugin"
+---
+
+The `@prflght/elizaos-plugin` package integrates Prflght directly into the elizaOS agent runtime. Once you add it to your character config, every transaction your agent sends is automatically intercepted and checked — no manual `firewall.check()` calls required. The plugin also injects your current policy and live protocol health data into every agent prompt so your agent can reason about its own limits.
+
+## What the plugin does
+
+The plugin registers two things with the elizaOS runtime:
+
+- **Provider** — before each LLM call, the provider fetches your current Prflght policy and live protocol health status and injects them into the prompt context. Your agent can see its own spending limits, allowed programs, and the current TVL health of any DeFi protocols it might interact with.
+- **Service** — the service wraps the elizaOS wallet service to intercept every outgoing transaction. Each transaction is checked against Prflght before it is submitted, exactly as if you had called `firewall.check()` manually.
+
+<Info>
+  The prompt injection gives your agent real-time awareness of its own policy. This means the agent can decide not to attempt a transaction it knows will be denied, rather than trying and receiving a `FirewallDenyError`.
+</Info>
+
+## Installation
+
+```bash
+npm install @prflght/elizaos-plugin
+```
+
+## Setup
+
+<Steps>
+  <Step title="Install the package">
+    Run the installation command above in your agent project directory.
+  </Step>
+
+  <Step title="Add the plugin to your character config">
+    Import `prfgltPlugin` and add it to the `plugins` array in your agent's character configuration:
+
+    ```typescript
+    import { prfgltPlugin } from '@prflght/elizaos-plugin'
+
+    // In your agent character config:
+    plugins: [prfgltPlugin],
+    ```
+  </Step>
+
+  <Step title="Set environment variables">
+    Add the following variables to your `.env` file:
+
+    ```bash
+    PRFLGHT_API_URL=https://api.prflght.xyz
+    PRFLGHT_AGENT_ID=<agent wallet pubkey>
+    ```
+
+    Set `PRFLGHT_AGENT_ID` to your agent's Solana wallet public key as a base58 string.
+  </Step>
+</Steps>
+
+<Note>
+  No other code changes are needed. Once the plugin is registered and the environment variables are set, all transactions sent by your elizaOS agent are intercepted and firewall-checked automatically.
+</Note>

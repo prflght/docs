@@ -1,0 +1,75 @@
+---
+title: "Protect Solana Agent Kit Actions with Prflght Firewall"
+description: "Use @prflght/sak-plugin to protect every Solana Agent Kit action with the Prflght transaction firewall — zero extra code after setup."
+sidebarTitle: "Solana Agent Kit"
+---
+
+The `@prflght/sak-plugin` package adds Prflght transaction firewall protection to any agent built with [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit). After a one-line setup call, every SAK action that produces a transaction is automatically intercepted and checked against your Prflght policy before it reaches the chain.
+
+## What the plugin does
+
+SAK actions — swaps, transfers, liquidity provision, and anything else in the SAK toolkit — all go through a shared transaction submission path. The `PrfghtPlugin` hooks into that path at the SAK level, so you get full firewall coverage across every action without touching individual action code.
+
+## Installation
+
+```bash
+npm install @prflght/sak-plugin
+```
+
+## Setup
+
+<Steps>
+  <Step title="Install the package">
+    Run the installation command above in your agent project directory.
+  </Step>
+
+  <Step title="Create your SolanaAgentKit instance">
+    Set up `SolanaAgentKit` as you normally would, providing your private key, RPC URL, and any required API keys:
+
+    ```typescript
+    import { SolanaAgentKit } from 'solana-agent-kit'
+    import { PrfghtPlugin } from '@prflght/sak-plugin'
+
+    const agent = new SolanaAgentKit(privateKey, rpcUrl, { OPENAI_API_KEY })
+    ```
+  </Step>
+
+  <Step title="Register the Prflght plugin">
+    Call `agent.use()` with a new `PrfghtPlugin` instance, passing your Prflght API URL:
+
+    ```typescript
+    agent.use(new PrfghtPlugin({ apiUrl: 'https://api.prflght.xyz' }))
+    ```
+  </Step>
+
+  <Step title="Run your agent normally">
+    All subsequent transactions produced by any SAK action are now automatically protected by Prflght. No changes to action code required.
+  </Step>
+</Steps>
+
+### Full example
+
+```typescript
+import { SolanaAgentKit } from 'solana-agent-kit'
+import { PrfghtPlugin } from '@prflght/sak-plugin'
+
+const agent = new SolanaAgentKit(privateKey, rpcUrl, { OPENAI_API_KEY })
+agent.use(new PrfghtPlugin({ apiUrl: 'https://api.prflght.xyz' }))
+
+// All transactions through any SAK action are now intercepted automatically.
+```
+
+<Note>
+  No other code changes are required. The plugin intercepts at the SAK level, so every action — including ones you add later — is covered automatically.
+</Note>
+
+## Comparing the plugin to the raw SDK
+
+| | `@prflght/sak-plugin` | `@prflght/sdk` |
+|---|---|---|
+| **Setup** | One `agent.use()` call | Manual `firewall.check()` before each transaction |
+| **Coverage** | All SAK actions automatically | Only where you explicitly call `check()` |
+| **Control** | Zero-config | Full control over serialization, error handling, and instruction placement |
+| **Best for** | SAK-based agents where you want drop-in protection | Custom agents or non-SAK frameworks |
+
+Use the raw SDK when you need fine-grained control over how transactions are built, serialized, or retried. Use the SAK plugin when you want complete coverage with minimal code.

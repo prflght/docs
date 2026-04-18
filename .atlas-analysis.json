@@ -1,0 +1,73 @@
+{
+  "projectType": "saas",
+  "projectName": "Prflght",
+  "projectDescription": "A transaction firewall for AI agents on Solana that simulates, policy-checks, and attests transactions before they reach the chain.",
+  "theme": "luma",
+  "primaryColor": "#b8b8b8",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/policies",
+              "concepts/protocol-health"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/sdk",
+              "integrations/elizaos-plugin",
+              "integrations/solana-agent-kit"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api-reference/check",
+              "api-reference/health"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Transaction simulation against live Solana RPC before execution",
+    "Per-agent YAML policy enforcement (notional limits, slippage, allowed programs)",
+    "Live DeFi protocol health monitoring via TVL feeds (Orca, Drift, Kamino, Raydium, Jupiter, and more)",
+    "Signed ed25519 on-chain attestations verified by Solana program",
+    "Drop-in SDK integration in 3 lines of code",
+    "elizaOS and Solana Agent Kit plugin support",
+    "Wallet-based authentication — no password needed",
+    "Self-service dashboard at app.prflght.xyz"
+  ],
+  "publicApiSurface": [
+    "POST /check",
+    "GET /health",
+    "Firewall (SDK class)",
+    "firewall.check(txBase64)",
+    "FirewallDenyError",
+    "prfgltPlugin (@prflght/elizaos-plugin)",
+    "PrfghtPlugin (@prflght/sak-plugin)"
+  ]
+}

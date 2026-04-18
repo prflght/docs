@@ -1,0 +1,64 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Prflght",
+  "theme": "luma",
+  "favicon": "https://media.brand.dev/3ae75f88-b189-4326-9ba7-bb9fb0161d5f.png",
+  "colors": {
+    "primary": "#b8b8b8",
+    "light": "#454545",
+    "dark": "#050505"
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.prflght.xyz"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/policies",
+              "concepts/protocol-health"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/sdk",
+              "integrations/elizaos-plugin",
+              "integrations/solana-agent-kit"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api-reference/check",
+              "api-reference/health"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": "/images/prflght-logo-black-bg.png"
+}

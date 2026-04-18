@@ -1,0 +1,38 @@
+---
+title: "What Is Prflght? Features and Capabilities Overview"
+sidebarTitle: "Introduction"
+description: "Prflght intercepts every transaction your AI agent sends, simulates it, enforces your policy, and checks live protocol health before it touches Solana."
+---
+
+Prflght sits between your AI agent and the Solana blockchain. Before any transaction reaches the chain, Prflght simulates it against a live RPC, evaluates it against your agent's policy, and checks the health of every DeFi protocol involved. Only transactions that pass all three checks receive a signed attestation — and only attested transactions are accepted by your on-chain program.
+
+## What Prflght does
+
+<CardGroup cols={2}>
+  <Card title="Transaction simulation" icon="flask">
+    Every transaction is simulated against a live Solana RPC before submission. Prflght catches failures, reverts, and unexpected account mutations before they cost you gas or cause damage.
+  </Card>
+  <Card title="Per-agent policy enforcement" icon="shield-check">
+    Define YAML-based rules per agent: maximum notional value, allowed program IDs, slippage limits, and daily transfer caps. Transactions that violate policy are blocked immediately.
+  </Card>
+  <Card title="Live protocol health monitoring" icon="chart-line">
+    Prflght pulls live TVL data from DeFiLlama for Orca, Drift, Kamino, Raydium, Jupiter, and more than a dozen other venues. Transactions routed to unhealthy protocols are held until health is confirmed.
+  </Card>
+  <Card title="On-chain attestation verification" icon="file-certificate">
+    Approved transactions receive a signed ed25519 attestation. Your on-chain program verifies this attestation before executing — so no transaction can bypass the firewall.
+  </Card>
+  <Card title="Drop-in SDK integration" icon="code">
+    Add Prflght to any TypeScript agent in three lines. Install `@prflght/sdk`, construct a `Firewall` client, and call `firewall.check()` before you send.
+  </Card>
+  <Card title="Wallet-based auth, no password" icon="wallet">
+    Connect Phantom or Solflare at [app.prflght.xyz](https://app.prflght.xyz) and sign a message to authenticate. Your API key is tied to your wallet — no separate credentials to manage.
+  </Card>
+</CardGroup>
+
+## Framework plugins
+
+Prflght ships native plugins for [elizaOS](/integrations/elizaos-plugin) and [Solana Agent Kit](/integrations/solana-agent-kit). If you use either framework, you can drop in the plugin without modifying your core agent logic.
+
+## Next step
+
+Follow the [quickstart](/quickstart) to connect your wallet, configure your first agent policy, and send your first protected transaction in minutes.
