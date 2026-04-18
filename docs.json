@@ -52,8 +52,7 @@
           {
             "group": "Endpoints",
             "pages": [
-              "api-reference/check",
-              "api-reference/health"
+              "api-reference/check"
             ]
           }
         ]
