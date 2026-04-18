@@ -1,112 +1,97 @@
 ---
 title: "Agent Policies: Configuring Transaction Rules"
-description: "Define per-agent YAML policies to control which programs an agent can call, set notional and slippage limits, and configure protocol health thresholds."
+description: "Define per-agent policies to control which programs an agent can call, set notional and slippage limits, and configure protocol health thresholds."
 sidebarTitle: "Policies"
 ---
 
-A policy is a YAML file that tells Prflght what your agent is and isn't allowed to do. Policies are stored per agent and evaluated on every transaction before it reaches the chain. Without a policy, Prflght has no rules to allow transactions against — so getting a policy right is the first step to putting your agent into production.
+A policy defines what your agent is and isn't allowed to do on-chain. Policies are stored in the Prflght database, scoped per agent wallet, and evaluated on every transaction before it reaches the chain. Without a policy, Prflght denies all transactions by default.
 
 ## Managing policies
 
 You can create and update policies in two ways:
 
 - **Dashboard** — use the policy editor at [app.prflght.xyz](https://app.prflght.xyz) to configure rules with a visual interface and save them to your agent.
-- **Admin API** — use the admin API to manage policies programmatically, which is useful for automated deployments and CI/CD workflows.
+- **Admin API** — manage policies programmatically via the admin API, useful for automated deployments and CI/CD workflows.
 
 <Warning>
   If no policy is configured for an agent, Prflght denies all transactions by default. Always set a policy before your agent begins sending transactions.
 </Warning>
 
-## Policy file format
+## Policy structure
 
-Policies are YAML files. The example below shows every supported field:
+Policies are stored as JSON in the database. The example below shows every supported field:
 
-```yaml
-version: 1
-
-# Allowlist of Solana program addresses this agent may invoke.
-# Any transaction that calls a program not on this list is denied.
-allowed_programs:
-  - JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4  # Jupiter v6
-
-# Maximum per-transaction value in USDC. Transactions above this
-# notional amount are denied.
-max_notional_usdc: 10000
-
-# Maximum allowed slippage in basis points (100 bps = 1%).
-# Transactions with higher configured slippage are denied.
-max_slippage_bps: 50
-
-# Rolling 24-hour transfer cap in USDC across all transactions.
-# Once this limit is reached, further transfers are denied until
-# the 24-hour window resets.
-daily_transfer_limit_usdc: 50000
-
-# Pause the agent if a monitored protocol's TVL drops by the
-# specified fraction within the monitoring window.
-# Key: protocol ID. Value: fractional drop that triggers a pause.
-pause_on_protocol_tvl_drop:
-  drift: 0.15
-
-# Deny any transaction involving a protocol whose health score
-# is below this threshold (0–100).
-deny_if_protocol_health_below: 60
+```json
+{
+  "version": 1,
+  "agent": "<agent_wallet_pubkey>",
+  "allowed_programs": [
+    "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+  ],
+  "max_notional_usdc": 10000,
+  "max_slippage_bps": 50,
+  "daily_transfer_limit_usdc": 50000,
+  "pause_on_protocol_tvl_drop": {
+    "drift": 0.15
+  },
+  "deny_if_protocol_health_below": 60
+}
 ```
 
 ## Field reference
 
 <AccordionGroup>
   <Accordion title="version">
-    **Type:** integer  
-    **Required:** yes  
+    **Type:** integer
+    **Required:** yes
     **Example:** `1`
 
     The policy schema version. Always set this to `1`. Future schema changes will increment this value, and Prflght will validate accordingly.
   </Accordion>
 
   <Accordion title="allowed_programs">
-    **Type:** list of strings (base58 public keys)  
-    **Required:** yes  
+    **Type:** array of strings (base58 public keys)
+    **Required:** yes
     **Example:** `["JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"]`
 
     An allowlist of Solana program addresses your agent is permitted to invoke. Any transaction that calls a program not on this list is denied. Add the address of every program your agent legitimately needs to interact with — for example, Jupiter v6, Orca Whirlpools, or your own deployed programs.
   </Accordion>
 
   <Accordion title="max_notional_usdc">
-    **Type:** number  
-    **Required:** yes  
+    **Type:** number
+    **Required:** yes
     **Example:** `10000`
 
     The maximum per-transaction notional value in USDC. Prflght calculates the notional value of the transaction and denies it if the value exceeds this limit. Set this to the largest single transaction your agent legitimately needs to execute.
   </Accordion>
 
   <Accordion title="max_slippage_bps">
-    **Type:** integer (basis points)  
-    **Required:** yes  
+    **Type:** integer (basis points)
+    **Required:** yes
     **Example:** `50` (= 0.5%)
 
     The maximum slippage tolerance in basis points that your agent is allowed to set on a swap. Transactions where the configured slippage exceeds this limit are denied. 100 basis points equals 1%.
   </Accordion>
 
   <Accordion title="daily_transfer_limit_usdc">
-    **Type:** number  
-    **Required:** no  
+    **Type:** number
+    **Required:** no
     **Example:** `50000`
 
     A rolling 24-hour cap on total USDC transferred across all transactions from this agent. Once cumulative transfers reach this limit within any 24-hour window, further transfer transactions are denied until the window resets.
   </Accordion>
 
   <Accordion title="pause_on_protocol_tvl_drop">
-    **Type:** map of string → number  
-    **Required:** no  
-    **Example:** `{ drift: 0.15 }`
+    **Type:** object (protocol ID → fractional drop)
+    **Required:** no
+    **Example:** `{ "drift": 0.15 }`
 
     A map of protocol IDs to fractional TVL drop thresholds. If a protocol's TVL drops by more than the specified fraction within the monitoring window, Prflght pauses the agent — blocking all transactions until the TVL recovers or you manually unpause. A value of `0.15` means a 15% drop triggers the pause.
   </Accordion>
 
   <Accordion title="deny_if_protocol_health_below">
-    **Type:** integer (0–100)  
-    **Required:** no  
+    **Type:** integer (0–100)
+    **Required:** no
     **Example:** `60`
 
     A health score threshold. Any transaction involving a protocol whose current health score is below this value is denied. Health scores are computed from live TVL data from DeFiLlama. See [Protocol Health](/concepts/protocol-health) for details on how scores are calculated.
