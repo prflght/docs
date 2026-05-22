@@ -1,6 +1,6 @@
 ---
 title: "Agent Policies: Configuring Transaction Rules"
-description: "Define per-agent policies to control which programs an agent can call, set notional and slippage limits, and configure protocol health thresholds."
+description: "Define per-agent policies to control which programs an agent can call, set notional and daily limits, and configure protocol health thresholds."
 sidebarTitle: "Policies"
 ---
 
@@ -8,7 +8,7 @@ A policy defines what your agent is and isn't allowed to do on-chain. Policies a
 
 ## Managing policies
 
-Use the policy editor at [app.prflght.xyz](https://app.prflght.xyz) to configure rules and save them to your agent.
+Use the policy editor at [app.prflght.xyz](https://app.prflght.xyz) to configure rules and save them. The dashboard lets you select from preset protocols (Jupiter, Orca, Drift, etc.) and set spending limits.
 
 <Warning>
   If no policy is configured for an agent, Prflght denies all transactions by default. Always set a policy before your agent begins sending transactions.
@@ -16,22 +16,16 @@ Use the policy editor at [app.prflght.xyz](https://app.prflght.xyz) to configure
 
 ## Policy structure
 
-Policies are stored as JSON in the database. The example below shows every supported field:
-
 ```json
 {
   "version": 1,
-  "agent": "<agent_wallet_pubkey>",
   "allowed_programs": [
     "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
   ],
   "max_notional_usdc": 10000,
-  "max_slippage_bps": 50,
   "daily_transfer_limit_usdc": 50000,
-  "pause_on_protocol_tvl_drop": {
-    "drift": 0.15
-  },
-  "deny_if_protocol_health_below": 60
+  "deny_if_protocol_health_below": 60,
+  "deny_direct_transfers": true
 }
 ```
 
@@ -39,62 +33,54 @@ Policies are stored as JSON in the database. The example below shows every suppo
 
 <AccordionGroup>
   <Accordion title="version">
-    **Type:** integer
-    **Required:** yes
-    **Example:** `1`
+    **Type:** integer — **Required:** yes
 
-    The policy schema version. Always set this to `1`. Future schema changes will increment this value, and Prflght will validate accordingly.
+    The policy schema version. Always `1`.
   </Accordion>
 
   <Accordion title="allowed_programs">
-    **Type:** array of strings (base58 public keys)
-    **Required:** yes
-    **Example:** `["JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"]`
+    **Type:** array of base58 program addresses — **Required:** yes
 
-    An allowlist of Solana program addresses your agent is permitted to invoke. Any transaction that calls a program not on this list is denied. Add the address of every program your agent legitimately needs to interact with — for example, Jupiter v6, Orca Whirlpools, or your own deployed programs.
+    Allowlist of Solana program addresses your agent may invoke as **outer instructions**. Any transaction whose top-level (non-CPI) instructions include a program not on this list is denied.
+
+    Programs called internally by an allowed program (via CPI) are automatically trusted — you do not need to list every DEX that Jupiter routes through, for example.
+
+    **System programs that are always allowed regardless of policy:**
+    - `11111111111111111111111111111111` — System Program
+    - `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` — SPL Token
+    - `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb` — Token-2022
+    - `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL` — Associated Token Account
+    - `ComputeBudget111111111111111111111111111111` — Compute Budget
+    - `Sysvar1nstructions1111111111111111111111111` — Sysvar Instructions
   </Accordion>
 
   <Accordion title="max_notional_usdc">
-    **Type:** number
-    **Required:** yes
-    **Example:** `10000`
+    **Type:** number — **Required:** yes
 
-    The maximum per-transaction notional value in USDC. Prflght calculates the notional value of the transaction and denies it if the value exceeds this limit. Set this to the largest single transaction your agent legitimately needs to execute.
-  </Accordion>
-
-  <Accordion title="max_slippage_bps">
-    **Type:** integer (basis points)
-    **Required:** yes
-    **Example:** `50` (= 0.5%)
-
-    The maximum slippage tolerance in basis points that your agent is allowed to set on a swap. Transactions where the configured slippage exceeds this limit are denied. 100 basis points equals 1%.
+    Maximum per-transaction notional value in USDC. Prflght calculates the stablecoin balance change from simulation and denies the transaction if it exceeds this limit.
   </Accordion>
 
   <Accordion title="daily_transfer_limit_usdc">
-    **Type:** number
-    **Required:** no
-    **Example:** `50000`
+    **Type:** number — **Required:** no
 
-    A rolling 24-hour cap on total USDC transferred across all transactions from this agent. Once cumulative transfers reach this limit within any 24-hour window, further transfer transactions are denied until the window resets.
-  </Accordion>
-
-  <Accordion title="pause_on_protocol_tvl_drop">
-    **Type:** object (protocol ID → fractional drop)
-    **Required:** no
-    **Example:** `{ "drift": 0.15 }`
-
-    A map of protocol IDs to fractional TVL drop thresholds. If a protocol's TVL drops by more than the specified fraction within the monitoring window, Prflght pauses the agent — blocking all transactions until the TVL recovers or you manually unpause. A value of `0.15` means a 15% drop triggers the pause.
+    Rolling 24-hour cap on total USDC transferred. Once cumulative transfers reach this limit, further transactions are denied until the counter resets.
   </Accordion>
 
   <Accordion title="deny_if_protocol_health_below">
-    **Type:** integer (0–100)
-    **Required:** no
-    **Example:** `60`
+    **Type:** integer 0–100 — **Required:** no
 
-    A health score threshold. Any transaction involving a protocol whose current health score is below this value is denied. See [Protocol Health](/concepts/protocol-health) for details on how scores are calculated.
+    Health score threshold. Transactions involving a protocol whose current health score is below this value are denied. See [Protocol Health](/concepts/protocol-health) for how scores are computed.
+  </Accordion>
+
+  <Accordion title="deny_direct_transfers">
+    **Type:** boolean — **Required:** no — **Default:** false
+
+    When `true`, blocks transactions that only invoke system programs (System Program, SPL Token) with no DeFi protocol interaction. This prevents prompt-injection attacks where a malicious instruction tricks an agent into sending a plain SOL or token transfer to an attacker's wallet.
+
+    Enable this if your agent should only execute DeFi operations, not arbitrary transfers.
   </Accordion>
 </AccordionGroup>
 
 <Tip>
-  Start with conservative limits — a low `max_notional_usdc`, a tight `max_slippage_bps`, and a short `daily_transfer_limit_usdc` — and loosen them as you observe your agent's real transaction patterns. It's much easier to raise limits than to recover from an agent that was too permissive.
+  Start with conservative limits and loosen them as you observe real transaction patterns. Enable `deny_direct_transfers` if your agent should only interact with DeFi protocols.
 </Tip>

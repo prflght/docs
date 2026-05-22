@@ -4,7 +4,7 @@ description: "Install @prflght/sdk to add Prflght's transaction firewall to any 
 sidebarTitle: "TypeScript SDK"
 ---
 
-The `@prflght/sdk` package is the lowest-level way to integrate Prflght into your agent. You call `firewall.check()` before sending any transaction, receive attestation instructions on allow, and catch `FirewallDenyError` on deny. Every other Prflght integration is built on top of this SDK.
+The `@prflght/sdk` package is the lowest-level way to integrate Prflght into any TypeScript Solana agent. Call `firewall.check()` before sending any transaction, receive attestation instructions on allow, and catch `FirewallDenyError` on deny.
 
 ## Installation
 
@@ -22,91 +22,59 @@ bun add @prflght/sdk
 
 ## Initialization
 
-Create a `Firewall` instance once at startup and reuse it for every transaction check. You need two values:
-
-- **`apiUrl`** — the Prflght API base URL: `https://api.prflght.xyz`
-- **`agentId`** — your agent's Solana wallet public key as a base58 string
-
 ```typescript
 import { Firewall, FirewallDenyError } from '@prflght/sdk'
 
 const firewall = new Firewall({
-  apiUrl: 'https://api.prflght.xyz',
-  agentId: agentKeypair.publicKey.toString(),
+  apiKey: process.env.PRFLGHT_API_KEY,
+  // apiUrl is optional — defaults to https://api.prflght.xyz
 })
 ```
 
-## The check() method
+## Checking a transaction
 
-Call `firewall.check()` before sending any transaction. Pass the transaction as a base64-encoded serialized `VersionedTransaction`.
-
-On allow, `check()` returns an object with an `instructions` array — these are attestation instructions you must prepend to your transaction before submitting it on-chain.
-
-On deny, `check()` throws a `FirewallDenyError` with a `.reason` string describing why the transaction was blocked.
-
-<Note>
-  You must prepend the returned attestation instructions to your transaction before sending. The Prflght on-chain program verifies the attestation at execution time — submitting without them will cause the transaction to fail.
-</Note>
-
-### Full example
+Call `firewall.check()` before sending any transaction. Pass the transaction serialized to base64.
 
 ```typescript
-import { Firewall, FirewallDenyError } from '@prflght/sdk'
+// Serialize your transaction to base64
+const txBase64 = Buffer.from(tx.serialize()).toString('base64')
 
-const firewall = new Firewall({
-  apiUrl: 'https://api.prflght.xyz',
-  agentId: agentKeypair.publicKey.toString(),
-})
-
-// Before sending any transaction:
 try {
   const result = await firewall.check(txBase64)
-  // result.instructions = attestation ixs to prepend to your tx
+  // Prepend attestation instructions before your own
   const finalTx = buildTxWithIxs([...result.instructions, ...yourIxs])
   await sendAndConfirm(finalTx)
 } catch (err) {
   if (err instanceof FirewallDenyError) {
-    console.error('Blocked:', err.reason) // e.g. "notional exceeds policy limit"
+    console.error('Blocked:', err.reason)
+  } else {
+    throw err
   }
 }
 ```
 
-<Tip>
-  To serialize a `VersionedTransaction` to base64, use:
-
-  ```typescript
-  const txBase64 = Buffer.from(tx.serialize()).toString('base64')
-  ```
-
-  Make sure you serialize the transaction after signing but before calling `check()`.
-</Tip>
+<Note>
+  You must prepend `result.instructions` to your transaction. The on-chain program verifies the attestation at execution time — submitting without it will cause the transaction to fail.
+</Note>
 
 ## Error handling
 
-`FirewallDenyError` is thrown whenever Prflght blocks a transaction. Catch it separately from other errors so you can handle policy denials without masking unexpected failures.
+`FirewallDenyError` is thrown whenever Prflght blocks a transaction.
 
 | Property | Type | Description |
 |---|---|---|
 | `err.reason` | `string` | Human-readable explanation of why the transaction was denied |
 
-Common reason strings include:
+Common reason strings:
 
-- `"notional exceeds policy limit"` — the transaction value exceeds your agent's configured spending cap
-- `"program not in allowlist"` — the transaction calls a Solana program your policy does not permit
-- `"slippage exceeds policy limit"` — the swap slippage tolerance is above your configured threshold
-- `"protocol health check failed"` — the DeFi protocol involved has TVL below your minimum health threshold
+- `"notional $X exceeds policy max $Y"` — transaction value exceeds your per-tx cap
+- `"program not in allowlist: <pubkey>"` — the transaction calls a program not in your policy
+- `"protocol health check failed"` — a protocol involved has a health score below your threshold
+- `"direct wallet transfer blocked"` — `deny_direct_transfers` is enabled and no DeFi program is invoked
+- `"No policy configured"` — no policy found for your API key owner wallet
 
-```typescript
-try {
-  const result = await firewall.check(txBase64)
-  // proceed
-} catch (err) {
-  if (err instanceof FirewallDenyError) {
-    // Handle policy denial — log, alert, or skip the transaction
-    console.error('Transaction blocked by Prflght:', err.reason)
-  } else {
-    // Re-throw unexpected errors
-    throw err
-  }
-}
+## Environment variables
+
+```bash
+PRFLGHT_API_KEY=<your api key from the dashboard>
 ```

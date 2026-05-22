@@ -41,7 +41,8 @@
             "pages": [
               "integrations/sdk",
               "integrations/elizaos-plugin",
-              "integrations/solana-agent-kit"
+              "integrations/solana-agent-kit",
+              "integrations/for-ai-agents"
             ]
           }
         ]

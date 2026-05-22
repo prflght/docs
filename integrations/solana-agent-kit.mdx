@@ -4,11 +4,7 @@ description: "Use @prflght/sak-plugin to protect every Solana Agent Kit action w
 sidebarTitle: "Solana Agent Kit"
 ---
 
-The `@prflght/sak-plugin` package adds Prflght transaction firewall protection to any agent built with [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit). After a one-line setup call, every SAK action that produces a transaction is automatically intercepted and checked against your Prflght policy before it reaches the chain.
-
-## What the plugin does
-
-SAK actions — swaps, transfers, liquidity provision, and anything else in the SAK toolkit — all go through a shared transaction submission path. The `PrfghtPlugin` hooks into that path at the SAK level, so you get full firewall coverage across every action without touching individual action code.
+The `@prflght/sak-plugin` package adds Prflght firewall protection to any agent built with [Solana Agent Kit](https://github.com/sendaifun/solana-agent-kit). After a one-line setup call, every SAK action that produces a transaction is automatically intercepted and checked against your policy before it reaches the chain.
 
 ## Installation
 
@@ -19,57 +15,50 @@ npm install @prflght/sak-plugin
 ## Setup
 
 <Steps>
-  <Step title="Install the package">
-    Run the installation command above in your agent project directory.
+  <Step title="Set environment variables">
+    ```bash
+    PRFLGHT_API_KEY=<your api key from app.prflght.xyz>
+    SOLANA_PRIVATE_KEY=<your agent's base58 keypair>
+    SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+    ```
   </Step>
 
-  <Step title="Create your SolanaAgentKit instance">
-    Set up `SolanaAgentKit` as you normally would, providing your private key, RPC URL, and any required API keys:
-
+  <Step title="Register the plugin">
     ```typescript
     import { SolanaAgentKit } from 'solana-agent-kit'
     import { PrfghtPlugin } from '@prflght/sak-plugin'
 
-    const agent = new SolanaAgentKit(privateKey, rpcUrl, { OPENAI_API_KEY })
-    ```
-  </Step>
+    const agent = new SolanaAgentKit(
+      process.env.SOLANA_PRIVATE_KEY,
+      process.env.SOLANA_RPC_URL,
+      { OPENAI_API_KEY: process.env.OPENAI_API_KEY },
+    )
 
-  <Step title="Register the Prflght plugin">
-    Call `agent.use()` with a new `PrfghtPlugin` instance, passing your Prflght API URL:
-
-    ```typescript
-    agent.use(new PrfghtPlugin({ apiUrl: 'https://api.prflght.xyz' }))
+    agent.use(new PrfghtPlugin({
+      apiKey: process.env.PRFLGHT_API_KEY,
+    }))
     ```
   </Step>
 
   <Step title="Run your agent normally">
-    All subsequent transactions produced by any SAK action are now automatically protected by Prflght. No changes to action code required.
+    All transactions produced by any SAK action are now automatically protected by Prflght. No changes to action code required.
   </Step>
 </Steps>
 
-### Full example
-
-```typescript
-import { SolanaAgentKit } from 'solana-agent-kit'
-import { PrfghtPlugin } from '@prflght/sak-plugin'
-
-const agent = new SolanaAgentKit(privateKey, rpcUrl, { OPENAI_API_KEY })
-agent.use(new PrfghtPlugin({ apiUrl: 'https://api.prflght.xyz' }))
-
-// All transactions through any SAK action are now intercepted automatically.
-```
-
 <Note>
-  No other code changes are required. The plugin intercepts at the SAK level, so every action — including ones you add later — is covered automatically.
+  The plugin intercepts at the SAK level, so every action — including ones you add later — is covered automatically.
 </Note>
 
-## Comparing the plugin to the raw SDK
+## How it works
+
+SAK actions (swaps, transfers, liquidity provision, etc.) all go through a shared transaction submission path. `PrfghtPlugin` hooks into that path to intercept every transaction and call `POST /check` before submission.
+
+If the transaction passes your policy, Prflght returns attestation instructions that are automatically prepended to the transaction. If it fails, the action throws with the deny reason.
+
+## Comparison
 
 | | `@prflght/sak-plugin` | `@prflght/sdk` |
 |---|---|---|
-| **Setup** | One `agent.use()` call | Manual `firewall.check()` before each transaction |
-| **Coverage** | All SAK actions automatically | Only where you explicitly call `check()` |
-| **Control** | Zero-config | Full control over serialization, error handling, and instruction placement |
-| **Best for** | SAK-based agents where you want drop-in protection | Custom agents or non-SAK frameworks |
-
-Use the raw SDK when you need fine-grained control over how transactions are built, serialized, or retried. Use the SAK plugin when you want complete coverage with minimal code.
+| **Setup** | One `agent.use()` call | Manual `firewall.check()` before each tx |
+| **Coverage** | All SAK actions automatically | Only where you call `check()` |
+| **Best for** | SAK-based agents | Custom agents or non-SAK frameworks |
