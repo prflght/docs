@@ -37,4 +37,10 @@ Every call to Prflght produces one of two outcomes:
 
 ## On-chain verification
 
-The Prflght on-chain program enforces that every transaction has a valid attestation prepended. Even if an agent bypasses the Prflght API, the on-chain program will reject any unattested transaction. The attestation cannot be forged without Prflght's signing key, giving you a hard guarantee that your policy is enforced at the chain level.
+The Prflght on-chain program is deployed on Solana **mainnet-beta**:
+
+```
+3JxoMhdGbnGx4eTvZ9nagSBdoWu1okd1Sf5VA3eRyKfo
+```
+
+The program enforces that every transaction has a valid attestation prepended. Even if an agent bypasses the Prflght API, the on-chain program will reject any unattested transaction. The attestation cannot be forged without Prflght's signing key, giving you a hard guarantee that your policy is enforced at the chain level.
