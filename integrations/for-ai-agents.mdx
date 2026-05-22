@@ -1,0 +1,163 @@
+---
+title: "Prflght for AI Agents: System Prompt and Integration Context"
+description: "Ready-made system prompt and LLM-friendly integration context for adding Prflght firewall awareness to any AI agent."
+sidebarTitle: "For AI Agents"
+---
+
+This page is designed for LLMs and AI coding assistants. It provides a copy-paste system prompt snippet and the technical context needed to integrate Prflght into any agent — custom TypeScript, elizaOS, or Solana Agent Kit.
+
+## System prompt snippet
+
+Add this to your agent's system prompt to give it live awareness of Prflght and its own policy.
+
+```
+You are a Solana DeFi agent protected by Prflght, a transaction firewall.
+
+Before submitting any transaction, you MUST call firewall.check(txBase64) from @prflght/sdk.
+If check() returns successfully, prepend result.instructions to your transaction before sending.
+If check() throws FirewallDenyError, do NOT submit the transaction. Log err.reason and stop.
+
+Your policy limits are injected below at runtime. Respect them — do not attempt transactions
+that would exceed max_notional_usdc or daily_transfer_limit_usdc, or that call programs not
+in allowed_programs. Doing so will result in a FirewallDenyError and a blocked transaction.
+
+Never attempt to bypass, skip, or work around the firewall.
+```
+
+Expand this snippet with your agent's actual policy values. The elizaOS plugin injects them automatically via its provider — you do not need to hardcode policy values in the prompt when using that plugin.
+
+## Integration context for LLMs
+
+### What Prflght does
+
+Prflght is a transaction firewall. It sits between an AI agent and Solana. Before a transaction is submitted:
+
+1. Prflght simulates it against a live RPC.
+2. It evaluates it against the agent's policy (notional limit, allowed programs, daily cap).
+3. It checks the health of every DeFi protocol the transaction touches.
+4. If all checks pass, it returns a signed ed25519 attestation and the instruction to verify it on-chain.
+
+The on-chain program (`3JxoMhdGbnGx4eTvZ9nagSBdoWu1okd1Sf5VA3eRyKfo`) verifies the attestation at execution time. A transaction without a valid attestation is rejected by the chain.
+
+### API endpoint
+
+```
+POST https://api.prflght.xyz/check
+Headers: x-api-key: <PRFLGHT_API_KEY>
+Body: { "tx": "<base64 serialized transaction>" }
+```
+
+**Allow response:**
+```json
+{
+  "decision": "allow",
+  "instructions": [ /* serialized instruction objects to prepend */ ]
+}
+```
+
+**Deny response** (HTTP 403):
+```json
+{
+  "decision": "deny",
+  "reason": "notional $15000 exceeds policy max $10000"
+}
+```
+
+### TypeScript SDK (custom agent)
+
+```typescript
+import { Firewall, FirewallDenyError } from '@prflght/sdk'
+
+const firewall = new Firewall({ apiKey: process.env.PRFLGHT_API_KEY })
+
+const txBase64 = Buffer.from(tx.serialize()).toString('base64')
+
+try {
+  const result = await firewall.check(txBase64)
+  const finalTx = buildTxWithIxs([...result.instructions, ...yourIxs])
+  await sendAndConfirm(finalTx)
+} catch (err) {
+  if (err instanceof FirewallDenyError) {
+    // Transaction blocked — do not submit
+    console.error('Blocked:', err.reason)
+  } else {
+    throw err
+  }
+}
+```
+
+**Critical:** `result.instructions` must be prepended to the transaction. Submitting without them causes on-chain rejection.
+
+### elizaOS plugin
+
+```typescript
+import { prfgltPlugin } from '@prflght/elizaos-plugin'
+
+// In your character config:
+plugins: [prfgltPlugin],
+```
+
+```bash
+PRFLGHT_API_KEY=<your api key>
+PRFLGHT_API_URL=https://api.prflght.xyz
+```
+
+Every transaction the elizaOS agent sends is intercepted automatically. No manual `check()` calls required. The plugin also injects your current policy and live protocol health into every LLM prompt.
+
+### Solana Agent Kit plugin
+
+```typescript
+import { SolanaAgentKit } from 'solana-agent-kit'
+import { PrfghtPlugin } from '@prflght/sak-plugin'
+
+const agent = new SolanaAgentKit(
+  process.env.SOLANA_PRIVATE_KEY,
+  process.env.SOLANA_RPC_URL,
+  { OPENAI_API_KEY: process.env.OPENAI_API_KEY },
+)
+
+agent.use(new PrfghtPlugin({ apiKey: process.env.PRFLGHT_API_KEY }))
+```
+
+All SAK actions are covered automatically after `agent.use()`.
+
+## Error reference
+
+| `err.reason` | Meaning |
+|---|---|
+| `"notional $X exceeds policy max $Y"` | Transaction value exceeds per-tx cap |
+| `"program not in allowlist: <pubkey>"` | Transaction calls a program not in your policy |
+| `"protocol health check failed"` | A protocol's TVL health score is below your threshold |
+| `"direct wallet transfer blocked"` | Plain SOL/SPL transfer with no DeFi program invoked |
+| `"No policy configured"` | No policy exists for this API key's wallet |
+| `"daily transfer limit exceeded"` | Rolling 24h cap reached |
+
+## Policy structure reference
+
+```json
+{
+  "version": 1,
+  "allowed_programs": [
+    "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+  ],
+  "max_notional_usdc": 10000,
+  "daily_transfer_limit_usdc": 50000,
+  "deny_if_protocol_health_below": 60,
+  "deny_direct_transfers": true
+}
+```
+
+Programs called internally by an allowed program (via CPI) are automatically trusted — you do not need to list every DEX that Jupiter routes through.
+
+Always-allowed programs (never need to be in `allowed_programs`):
+- `11111111111111111111111111111111` — System Program
+- `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` — SPL Token
+- `ComputeBudget111111111111111111111111111111` — Compute Budget
+
+## Environment variables
+
+```bash
+PRFLGHT_API_KEY=<from app.prflght.xyz — API Keys section>
+```
+
+All integrations use only `PRFLGHT_API_KEY`. No `agentId` or separate wallet address is required.
