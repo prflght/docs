@@ -4,7 +4,7 @@ description: "Define per-agent policies to control which programs an agent can c
 sidebarTitle: "Policies"
 ---
 
-A policy defines what your agent is and isn't allowed to do on-chain. Policies are stored in the Prflght database, scoped per agent wallet, and evaluated on every transaction before it reaches the chain. Without a policy, Prflght denies all transactions by default.
+A policy defines what your agent is and isn't allowed to do on-chain. Policies are scoped per agent wallet and evaluated on every transaction before it reaches the chain. Without a policy, Prflght denies all transactions by default.
 
 ## Managing policies
 
@@ -33,47 +33,47 @@ Use the policy editor at [app.prflght.xyz](https://app.prflght.xyz) to configure
 
 <AccordionGroup>
   <Accordion title="version">
-    **Type:** integer — **Required:** yes
+    **Type:** integer - **Required:** yes
 
     The policy schema version. Always `1`.
   </Accordion>
 
   <Accordion title="allowed_programs">
-    **Type:** array of base58 program addresses — **Required:** yes
+    **Type:** array of base58 program addresses - **Required:** yes
 
     Allowlist of Solana program addresses your agent may invoke as **outer instructions**. Any transaction whose top-level (non-CPI) instructions include a program not on this list is denied.
 
-    Programs called internally by an allowed program (via CPI) are automatically trusted — you do not need to list every DEX that Jupiter routes through, for example.
+    Programs called internally by an allowed program (via CPI) are automatically trusted - you do not need to list every DEX that Jupiter routes through, for example.
 
     **System programs that are always allowed regardless of policy:**
-    - `11111111111111111111111111111111` — System Program
-    - `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` — SPL Token
-    - `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb` — Token-2022
-    - `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL` — Associated Token Account
-    - `ComputeBudget111111111111111111111111111111` — Compute Budget
-    - `Sysvar1nstructions1111111111111111111111111` — Sysvar Instructions
+    - `11111111111111111111111111111111` - System Program
+    - `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` - SPL Token
+    - `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb` - Token-2022
+    - `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL` - Associated Token Account
+    - `ComputeBudget111111111111111111111111111111` - Compute Budget
+    - `Sysvar1nstructions1111111111111111111111111` - Sysvar Instructions
   </Accordion>
 
   <Accordion title="max_notional_usdc">
-    **Type:** number — **Required:** yes
+    **Type:** number - **Required:** yes
 
     Maximum per-transaction notional value in USDC. Prflght calculates the stablecoin balance change from simulation and denies the transaction if it exceeds this limit.
   </Accordion>
 
   <Accordion title="daily_transfer_limit_usdc">
-    **Type:** number — **Required:** no
+    **Type:** number - **Required:** no
 
     Rolling 24-hour cap on total USDC transferred. Once cumulative transfers reach this limit, further transactions are denied until the counter resets.
   </Accordion>
 
   <Accordion title="deny_if_protocol_health_below">
-    **Type:** integer 0–100 — **Required:** no
+    **Type:** integer 0–100 - **Required:** no
 
     Health score threshold. Transactions involving a protocol whose current health score is below this value are denied. See [Protocol Health](/concepts/protocol-health) for how scores are computed.
   </Accordion>
 
   <Accordion title="deny_direct_transfers">
-    **Type:** boolean — **Required:** no — **Default:** false
+    **Type:** boolean - **Required:** no - **Default:** false
 
     When `true`, blocks transactions that only invoke system programs (System Program, SPL Token) with no DeFi protocol interaction. This prevents prompt-injection attacks where a malicious instruction tricks an agent into sending a plain SOL or token transfer to an attacker's wallet.
 

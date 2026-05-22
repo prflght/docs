@@ -4,7 +4,7 @@ description: "Ready-made system prompt and LLM-friendly integration context for 
 sidebarTitle: "For AI Agents"
 ---
 
-This page is designed for LLMs and AI coding assistants. It provides a copy-paste system prompt snippet and the technical context needed to integrate Prflght into any agent — custom TypeScript, elizaOS, or Solana Agent Kit.
+This page is designed for LLMs and AI coding assistants. It provides a copy-paste system prompt snippet and the technical context needed to integrate Prflght into any agent - custom TypeScript, elizaOS, or Solana Agent Kit.
 
 ## System prompt snippet
 
@@ -17,14 +17,14 @@ Before submitting any transaction, you MUST call firewall.check(txBase64) from @
 If check() returns successfully, prepend result.instructions to your transaction before sending.
 If check() throws FirewallDenyError, do NOT submit the transaction. Log err.reason and stop.
 
-Your policy limits are injected below at runtime. Respect them — do not attempt transactions
+Your policy limits are injected below at runtime. Respect them - do not attempt transactions
 that would exceed max_notional_usdc or daily_transfer_limit_usdc, or that call programs not
 in allowed_programs. Doing so will result in a FirewallDenyError and a blocked transaction.
 
 Never attempt to bypass, skip, or work around the firewall.
 ```
 
-Expand this snippet with your agent's actual policy values. The elizaOS plugin injects them automatically via its provider — you do not need to hardcode policy values in the prompt when using that plugin.
+Expand this snippet with your agent's actual policy values. The elizaOS plugin injects them automatically via its provider - you do not need to hardcode policy values in the prompt when using that plugin.
 
 ## Integration context for LLMs
 
@@ -44,14 +44,14 @@ The on-chain program (`3JxoMhdGbnGx4eTvZ9nagSBdoWu1okd1Sf5VA3eRyKfo`) verifies t
 ```
 POST https://api.prflght.xyz/check
 Headers: x-api-key: <PRFLGHT_API_KEY>
-Body: { "tx": "<base64 serialized transaction>" }
+Body: { "tx": "<base64 serialized transaction>", "agentId": "<agent wallet pubkey>" }
 ```
 
 **Allow response:**
 ```json
 {
   "decision": "allow",
-  "instructions": [ /* serialized instruction objects to prepend */ ]
+  "attestationIxs": [ /* serialized instruction objects to prepend */ ]
 }
 ```
 
@@ -68,7 +68,10 @@ Body: { "tx": "<base64 serialized transaction>" }
 ```typescript
 import { Firewall, FirewallDenyError } from '@prflght/sdk'
 
-const firewall = new Firewall({ apiKey: process.env.PRFLGHT_API_KEY })
+const firewall = new Firewall({
+  apiKey: process.env.PRFLGHT_API_KEY,
+  agentId: agentKeypair.publicKey.toBase58(),
+})
 
 const txBase64 = Buffer.from(tx.serialize()).toString('base64')
 
@@ -78,7 +81,7 @@ try {
   await sendAndConfirm(finalTx)
 } catch (err) {
   if (err instanceof FirewallDenyError) {
-    // Transaction blocked — do not submit
+    // Transaction blocked - do not submit
     console.error('Blocked:', err.reason)
   } else {
     throw err
@@ -147,17 +150,17 @@ All SAK actions are covered automatically after `agent.use()`.
 }
 ```
 
-Programs called internally by an allowed program (via CPI) are automatically trusted — you do not need to list every DEX that Jupiter routes through.
+Programs called internally by an allowed program (via CPI) are automatically trusted - you do not need to list every DEX that Jupiter routes through.
 
 Always-allowed programs (never need to be in `allowed_programs`):
-- `11111111111111111111111111111111` — System Program
-- `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` — SPL Token
-- `ComputeBudget111111111111111111111111111111` — Compute Budget
+- `11111111111111111111111111111111` - System Program
+- `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` - SPL Token
+- `ComputeBudget111111111111111111111111111111` - Compute Budget
 
 ## Environment variables
 
 ```bash
-PRFLGHT_API_KEY=<from app.prflght.xyz — API Keys section>
+PRFLGHT_API_KEY=<from app.prflght.xyz - API Keys section>
 ```
 
-All integrations use only `PRFLGHT_API_KEY`. No `agentId` or separate wallet address is required.
+The SDK requires `PRFLGHT_API_KEY` (auth header) and `agentId` (your agent's Solana wallet public key, used in the on-chain attestation). Framework plugins (elizaOS, SAK) handle `agentId` internally.

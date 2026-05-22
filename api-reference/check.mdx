@@ -1,10 +1,10 @@
 ---
-title: "POST /check — Validate and Attest a Transaction"
+title: "POST /check - Validate and Attest a Transaction"
 description: "Simulate, policy-check, and attest a Solana transaction. Returns signed attestation instructions to prepend before submitting on-chain."
 sidebarTitle: "POST /check"
 ---
 
-`POST /check` is the core Prflght endpoint. Submit a serialized Solana transaction and your agent's wallet public key, and Prflght will simulate it against a live RPC, evaluate it against your agent's policy, verify the health of any DeFi protocols involved, and — if everything passes — return signed ed25519 attestation instructions you must prepend to the transaction before sending it on-chain.
+`POST /check` is the core Prflght endpoint. Submit a serialized Solana transaction and Prflght will simulate it, evaluate it against your policy, check the health of any DeFi protocols involved, and return signed ed25519 attestation instructions to prepend before sending on-chain.
 
 ## Endpoint
 
@@ -14,16 +14,20 @@ POST https://api.prflght.xyz/check
 
 ## Authentication
 
-Pass your agent's wallet public key as the `agentId` field in the request body. Prflght uses this to look up the policy that governs the transaction.
+Pass your API key in the `x-api-key` request header. Get your API key from the **API Keys** section of [app.prflght.xyz](https://app.prflght.xyz).
+
+```bash
+x-api-key: <your PRFLGHT_API_KEY>
+```
 
 ## Request body
 
 <ParamField body="tx" type="string" required>
-  Base64-encoded serialized Solana `VersionedTransaction`. Serialize the transaction using `transaction.serialize()` and then encode with `Buffer.from(...).toString('base64')` before sending.
+  Base64-encoded serialized Solana `VersionedTransaction`. Serialize using `transaction.serialize()` then encode with `Buffer.from(...).toString('base64')`.
 </ParamField>
 
 <ParamField body="agentId" type="string" required>
-  Your agent's wallet public key as a base58 string. This identifies which policy Prflght evaluates the transaction against.
+  Your agent's wallet public key as a base58 string. Included in the on-chain attestation so the program can verify the correct agent signed.
 </ParamField>
 
 ### Request example
@@ -42,23 +46,23 @@ Prflght returns one of two decision shapes: `allow` or `deny`.
 ### Allow response
 
 <ResponseField name="decision" type="string" required>
-  `"allow"` — the transaction passed simulation, policy evaluation, and protocol health checks.
+  `"allow"` - the transaction passed simulation, policy evaluation, and protocol health checks.
 </ResponseField>
 
 <ResponseField name="policyHash" type="string" required>
-  Hex string identifying the exact policy version that was evaluated. Use this for audit trails and to verify you're running against the expected policy.
+  Hex string identifying the exact policy version evaluated. Use for audit trails.
 </ResponseField>
 
 <ResponseField name="expiry" type="number" required>
-  Unix timestamp (seconds) after which the attestation is no longer valid. You must submit the transaction on-chain before this time.
+  Unix timestamp (seconds) after which the attestation is no longer valid. Submit the transaction on-chain before this time.
 </ResponseField>
 
 <ResponseField name="attestationIxs" type="array" required>
-  List of instruction objects to prepend to your transaction before submitting. Each instruction has the following shape:
+  Instruction objects to prepend to your transaction before submitting. Each instruction has:
 
-  <Expandable title="attestationIxs properties">
+  <Expandable title="attestationIxs item">
     <ResponseField name="programId" type="string" required>
-      The on-chain program ID of the Prflght attestation program.
+      The Prflght on-chain program ID: `3JxoMhdGbnGx4eTvZ9nagSBdoWu1okd1Sf5VA3eRyKfo`
     </ResponseField>
     <ResponseField name="accounts" type="array" required>
       Account metas required by the attestation instruction.
@@ -72,11 +76,11 @@ Prflght returns one of two decision shapes: `allow` or `deny`.
 ### Deny response
 
 <ResponseField name="decision" type="string" required>
-  `"deny"` — the transaction was blocked.
+  `"deny"` - the transaction was blocked.
 </ResponseField>
 
 <ResponseField name="reason" type="string" required>
-  Human-readable explanation of why the transaction was denied. For example: `"notional exceeds policy max_notional_usdc (10000)"`.
+  Human-readable explanation of why the transaction was denied. For example: `"notional $15000 exceeds policy max $10000"`.
 </ResponseField>
 
 ### Response examples
@@ -87,10 +91,10 @@ Prflght returns one of two decision shapes: `allow` or `deny`.
     {
       "decision": "allow",
       "policyHash": "a3f9c12e8b4d7a0156ef23c9814bdf2e99c0a71d3b55f8e241d36a07c4e89f12",
-      "expiry": 1713000000,
+      "expiry": 1713000060,
       "attestationIxs": [
         {
-          "programId": "PrfLGHT11111111111111111111111111111111111111",
+          "programId": "3JxoMhdGbnGx4eTvZ9nagSBdoWu1okd1Sf5VA3eRyKfo",
           "accounts": [
             { "pubkey": "4sGjMW1sUnHuiSFRhCAUt3pCkTaLRF1rBDUBGfVXvBb3", "isSigner": false, "isWritable": false }
           ],
@@ -104,16 +108,16 @@ Prflght returns one of two decision shapes: `allow` or `deny`.
     ```json
     {
       "decision": "deny",
-      "reason": "notional exceeds policy max_notional_usdc (10000)"
+      "reason": "notional $15000 exceeds policy max $10000"
     }
     ```
   </Tab>
 </Tabs>
 
 <Warning>
-  You must prepend every instruction in `attestationIxs` to your transaction before submitting it on-chain. The Prflght on-chain program verifies the attestation as a prerequisite to execution — if the attestation instructions are missing or placed after your other instructions, the transaction will be rejected at the program level.
+  You must prepend every instruction in `attestationIxs` to your transaction before submitting. The on-chain program verifies the attestation as the first step - if the instructions are missing or placed after your other instructions, the transaction is rejected.
 </Warning>
 
 <Note>
-  Transactions are denied for one of three reasons: a policy violation (e.g. notional limit, disallowed program, or slippage cap exceeded), a protocol health check failure (venue health score below your policy threshold), or a simulation failure (the transaction would revert on-chain). The `reason` field in a deny response tells you which condition triggered the block.
+  Transactions are denied for one of three reasons: a policy violation (notional limit, disallowed program, or daily cap exceeded), a protocol health check failure (venue health score below your threshold), or a simulation failure (the transaction would revert on-chain). The `reason` field tells you which condition triggered the block.
 </Note>

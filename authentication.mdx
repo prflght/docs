@@ -1,6 +1,6 @@
 ---
 title: "Authenticate with Prflght Using Your Solana Wallet"
-description: "Prflght uses wallet-based authentication — connect Phantom or Solflare, sign a message, and use your API key to authorize SDK requests."
+description: "Prflght uses wallet-based authentication - connect Phantom or Solflare, sign a message, and use your API key to authorize SDK requests."
 ---
 
 Prflght authenticates you through your Solana wallet. There are no passwords or email-based accounts. You sign a message with your wallet to prove ownership, and the dashboard issues an API key you use to authorize all SDK calls.
@@ -10,7 +10,7 @@ Prflght authenticates you through your Solana wallet. There are no passwords or 
 1. Go to [app.prflght.xyz](https://app.prflght.xyz).
 2. Click **Connect wallet** and select **Phantom** or **Solflare**.
 3. Approve the connection in your wallet extension.
-4. Sign the authentication message when prompted. The message is plain text — it does not authorize any transaction or transfer of funds.
+4. Sign the authentication message when prompted. The message is plain text - it does not authorize any transaction or transfer of funds.
 
 Once signed, your session is active. Sessions persist until you disconnect your wallet from the dashboard.
 
@@ -25,6 +25,7 @@ import { Firewall } from '@prflght/sdk'
 
 const firewall = new Firewall({
   apiKey: process.env.PRFLGHT_API_KEY,
+  agentId: agentKeypair.publicKey.toBase58(),
 })
 ```
 
@@ -34,7 +35,7 @@ Or set it as the `x-api-key` header when calling the API directly:
 curl -X POST https://api.prflght.xyz/check \
   -H "x-api-key: $PRFLGHT_API_KEY" \
   -H "content-type: application/json" \
-  -d '{"tx": "<base64 serialized transaction>"}'
+  -d '{"tx": "<base64 serialized transaction>", "agentId": "<agent wallet pubkey>"}'
 ```
 
 ## Environment variables

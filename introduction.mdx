@@ -4,7 +4,7 @@ sidebarTitle: "Introduction"
 description: "Prflght intercepts every transaction your AI agent sends, simulates it, enforces your policy, and checks live protocol health before it touches Solana."
 ---
 
-Prflght sits between your AI agent and the Solana blockchain. Before any transaction reaches the chain, Prflght simulates it against a live RPC, evaluates it against your agent's policy, and checks the health of every DeFi protocol involved. Only transactions that pass all three checks receive a signed attestation — and only attested transactions are accepted by your on-chain program.
+Prflght sits between your AI agent and the Solana blockchain. Before any transaction reaches the chain, Prflght simulates it against a live RPC, evaluates it against your agent's policy, and checks the health of every DeFi protocol involved. Only transactions that pass all three checks receive a signed attestation - and only attested transactions are accepted by your on-chain program.
 
 ## What Prflght does
 
@@ -19,13 +19,13 @@ Prflght sits between your AI agent and the Solana blockchain. Before any transac
     Prflght polls live vault balances via Helius RPC for Orca, Drift, Kamino, Raydium, Jupiter, and more than a dozen other venues. Transactions routed to unhealthy protocols are blocked.
   </Card>
   <Card title="On-chain attestation verification" icon="file-certificate">
-    Approved transactions receive a signed ed25519 attestation. Your on-chain program verifies this attestation before executing — so no transaction can bypass the firewall.
+    Approved transactions receive a signed ed25519 attestation. Your on-chain program verifies this attestation before executing - so no transaction can bypass the firewall.
   </Card>
   <Card title="Drop-in SDK integration" icon="code">
     Add Prflght to any TypeScript agent in three lines. Install `@prflght/sdk`, construct a `Firewall` client, and call `firewall.check()` before you send.
   </Card>
   <Card title="Wallet-based auth, no password" icon="wallet">
-    Connect Phantom or Solflare at [app.prflght.xyz](https://app.prflght.xyz) and sign a message to authenticate. Your API key is tied to your wallet — no separate credentials to manage.
+    Connect Phantom or Solflare at [app.prflght.xyz](https://app.prflght.xyz) and sign a message to authenticate. Your API key is tied to your wallet - no separate credentials to manage.
   </Card>
 </CardGroup>
 

@@ -1,34 +1,30 @@
 ---
 title: "DeFi Protocol Health: TVL Monitoring and Risk Thresholds"
-description: "Prflght monitors live TVL for Orca, Drift, Jupiter, and more. Configure health thresholds to block or pause your agent automatically."
+description: "Prflght monitors live vault balances for Orca, Drift, Jupiter, and more. Configure health thresholds to block your agent automatically."
 sidebarTitle: "Protocol Health"
 ---
 
-Prflght continuously monitors the health of the DeFi protocols your agent interacts with. Before approving any transaction, Prflght checks the current health of every protocol involved and can block the transaction or pause your agent if a protocol is under stress. This protects your agent from executing trades on venues that may be experiencing an exploit, a liquidity crisis, or other adverse conditions.
+Prflght continuously monitors the health of the DeFi protocols your agent interacts with. Before approving any transaction, Prflght checks the current health of every protocol involved and can block the transaction if a protocol is under stress. This protects your agent from executing trades on venues that may be experiencing an exploit, a liquidity crisis, or other adverse conditions.
 
 ## Monitored protocols
 
-Prflght currently monitors the following venues: Orca, Drift, Kamino, Raydium, Jupiter, and additional protocols. The full list is visible on your dashboard at [app.prflght.xyz](https://app.prflght.xyz).
+Prflght currently monitors 12 venues: Orca, Drift, Kamino, Raydium, Jupiter, Marginfi, Solend, Marinade, Jito, Meteora, Phoenix, and Mango. The full list with live scores is visible on your dashboard at [app.prflght.xyz](https://app.prflght.xyz).
 
 ## Health scores
 
-Each protocol is assigned a `healthScore` from 0 to 100, where 100 represents a fully healthy protocol. Scores are derived from live on-chain data. Health data feeds directly into the `POST /check` pipeline — you never need to query it separately.
+Each protocol is assigned a `healthScore` from 0 to 100, where 100 represents a fully healthy protocol. Scores are derived from live vault token account balances polled via Helius RPC every 15 minutes. Health data feeds directly into the `POST /check` pipeline - you never need to query it separately.
 
 Each venue also carries a status:
 
-- **`healthy`** — the protocol is operating normally.
-- **`warning`** — the protocol's health score has declined to a level that warrants caution.
+- **`healthy`** - the protocol is operating normally.
+- **`warning`** - the protocol's health score has declined to a level that warrants caution.
 
 ## How health ties into your policy
 
-Two policy fields control how Prflght acts when protocol health changes:
+**`deny_if_protocol_health_below`** - set an integer threshold (0-100). Any transaction that involves a protocol whose `healthScore` is below this value is denied automatically during the `POST /check` call.
 
-**`deny_if_protocol_health_below`** — set an integer threshold (0–100). Any transaction that involves a protocol whose `healthScore` is below this value is denied automatically during the `POST /check` call.
-
-**`pause_on_protocol_tvl_drop`** — set a map of protocol IDs to fractional drop thresholds. If a protocol's TVL drops by more than the specified fraction within the monitoring window, Prflght pauses your agent entirely, blocking all transactions until the TVL recovers or you manually resume from the dashboard.
-
-See [Policies](/concepts/policies) for the full policy field reference and a complete configuration example.
+See [Policies](/concepts/policies) for the full policy field reference.
 
 <Note>
-  Check your dashboard at [app.prflght.xyz](https://app.prflght.xyz) for a live view of current protocol health scores. The dashboard updates in real time and highlights any venues currently in a warning state.
+  Check your dashboard at [app.prflght.xyz](https://app.prflght.xyz) for a live view of current protocol health scores. The dashboard highlights any venues currently in a warning state.
 </Note>
