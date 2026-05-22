@@ -3,7 +3,7 @@ title: "Prflght: Transaction Firewall for AI Agents on Solana"
 description: "Prflght intercepts, simulates, and policy-checks every transaction your AI agent sends before it reaches the Solana blockchain. Set up in minutes."
 ---
 
-Prflght is a transaction firewall that sits between your AI agent and the Solana blockchain. Before any transaction is submitted on-chain, Prflght simulates it, checks it against your agent's policy, and verifies the health of any DeFi protocols involved — only allowing the transaction through if it passes every check.
+Prflght is a transaction firewall that sits between your AI agent and the Solana blockchain. Before any transaction is submitted on-chain, Prflght simulates it, checks it against your agent's policy, and verifies the health of any DeFi protocols involved - only allowing the transaction through if it passes every check.
 
 <CardGroup cols={2}>
   <Card title="Quick Start" icon="bolt" href="/quickstart">
@@ -25,8 +25,8 @@ Prflght is a transaction firewall that sits between your AI agent and the Solana
 Every transaction your AI agent sends is automatically:
 
 1. **Simulated** against a live Solana RPC to catch failures before they hit the chain
-2. **Policy-checked** against your per-agent rules — notional limits, allowed programs, slippage caps, and daily transfer limits
-3. **Protocol health-verified** using live TVL data from DeFiLlama for Orca, Drift, Kamino, Raydium, Jupiter, and more
+2. **Policy-checked** against your per-agent rules - notional limits, allowed programs, and daily transfer limits
+3. **Protocol health-verified** using live vault balance data for Orca, Drift, Kamino, Raydium, Jupiter, and more
 4. **Attested** with a signed ed25519 signature that your on-chain program verifies before executing
 
 <Steps>

@@ -5,7 +5,7 @@ description: "Connect your wallet, set your agent policy, install the SDK, and s
 
 <Steps>
   <Step title="Connect your wallet">
-    Go to [app.prflght.xyz](https://app.prflght.xyz) and connect your Solana wallet (Phantom or Solflare). Sign the authentication message — this proves ownership of your wallet and creates your account. No password required.
+    Go to [app.prflght.xyz](https://app.prflght.xyz) and connect your Solana wallet (Phantom or Solflare). Sign the authentication message - this proves ownership of your wallet and creates your account. No password required.
   </Step>
 
   <Step title="Copy your API key">
@@ -15,10 +15,10 @@ description: "Connect your wallet, set your agent policy, install the SDK, and s
   <Step title="Set your agent policy">
     Open the **Policy** page on the dashboard and configure your rules:
 
-    - **Allowed programs** — select protocols your agent may interact with (Jupiter, Orca, Drift, etc.)
-    - **Max notional** — maximum USDC value per transaction
-    - **Daily transfer limit** — rolling 24-hour cap
-    - **Deny direct transfers** — block plain SOL/SPL transfers with no DeFi interaction (recommended)
+    - **Allowed programs** - select protocols your agent may interact with (Jupiter, Orca, Drift, etc.)
+    - **Max notional** - maximum USDC value per transaction
+    - **Daily transfer limit** - rolling 24-hour cap
+    - **Deny direct transfers** - block plain SOL/SPL transfers with no DeFi interaction (recommended)
 
     Save the policy. Prflght applies it to every transaction your agent submits.
   </Step>
@@ -43,11 +43,12 @@ description: "Connect your wallet, set your agent policy, install the SDK, and s
 
     const firewall = new Firewall({
       apiKey: process.env.PRFLGHT_API_KEY,
+      agentId: agentKeypair.publicKey.toBase58(), // your agent's wallet public key
       // apiUrl defaults to https://api.prflght.xyz
     })
     ```
 
-    Store your API key in an environment variable — never hardcode it.
+    Store your API key in an environment variable - never hardcode it.
   </Step>
 
   <Step title="Check your transaction before sending">
@@ -66,7 +67,7 @@ description: "Connect your wallet, set your agent policy, install the SDK, and s
     ```
 
     <Note>
-      You must prepend `result.instructions` to your transaction. The on-chain program verifies the attestation at execution time — transactions without it will fail.
+      You must prepend `result.instructions` to your transaction. The on-chain program verifies the attestation at execution time - transactions without it will fail.
     </Note>
   </Step>
 </Steps>
@@ -79,8 +80,8 @@ PRFLGHT_API_KEY=<your api key from the dashboard>
 
 ## Next steps
 
-- [Policy reference](/concepts/policies) — full list of policy fields
-- [Protocol health](/concepts/protocol-health) — how health scores are computed
-- [elizaOS plugin](/integrations/elizaos-plugin) — drop-in integration for elizaOS agents
-- [Solana Agent Kit plugin](/integrations/solana-agent-kit) — drop-in integration for SAK agents
-- [For AI agents](/integrations/for-ai-agents) — ready-made system prompt and LLM context
+- [Policy reference](/concepts/policies) - full list of policy fields
+- [Protocol health](/concepts/protocol-health) - how health scores are computed
+- [elizaOS plugin](/integrations/elizaos-plugin) - drop-in integration for elizaOS agents
+- [Solana Agent Kit plugin](/integrations/solana-agent-kit) - drop-in integration for SAK agents
+- [For AI agents](/integrations/for-ai-agents) - ready-made system prompt and LLM context

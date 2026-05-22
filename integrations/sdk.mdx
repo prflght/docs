@@ -27,7 +27,8 @@ import { Firewall, FirewallDenyError } from '@prflght/sdk'
 
 const firewall = new Firewall({
   apiKey: process.env.PRFLGHT_API_KEY,
-  // apiUrl is optional — defaults to https://api.prflght.xyz
+  agentId: agentKeypair.publicKey.toBase58(), // your agent's wallet public key
+  // apiUrl is optional - defaults to https://api.prflght.xyz
 })
 ```
 
@@ -54,7 +55,7 @@ try {
 ```
 
 <Note>
-  You must prepend `result.instructions` to your transaction. The on-chain program verifies the attestation at execution time — submitting without it will cause the transaction to fail.
+  You must prepend `result.instructions` to your transaction. The on-chain program verifies the attestation at execution time - submitting without it will cause the transaction to fail.
 </Note>
 
 ## Error handling
@@ -67,11 +68,11 @@ try {
 
 Common reason strings:
 
-- `"notional $X exceeds policy max $Y"` — transaction value exceeds your per-tx cap
-- `"program not in allowlist: <pubkey>"` — the transaction calls a program not in your policy
-- `"protocol health check failed"` — a protocol involved has a health score below your threshold
-- `"direct wallet transfer blocked"` — `deny_direct_transfers` is enabled and no DeFi program is invoked
-- `"No policy configured"` — no policy found for your API key owner wallet
+- `"notional $X exceeds policy max $Y"` - transaction value exceeds your per-tx cap
+- `"program not in allowlist: <pubkey>"` - the transaction calls a program not in your policy
+- `"protocol health check failed"` - a protocol involved has a health score below your threshold
+- `"direct wallet transfer blocked"` - `deny_direct_transfers` is enabled and no DeFi program is invoked
+- `"No policy configured"` - no policy found for your API key owner wallet
 
 ## Environment variables
 
