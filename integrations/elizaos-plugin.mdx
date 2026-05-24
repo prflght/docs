@@ -1,17 +1,18 @@
 ---
-title: "elizaOS Plugin for Prflght Transaction Firewall"
-description: "Add @prflght/elizaos-plugin to your elizaOS agent to automatically firewall every transaction and inject live policy data into prompts."
+title: "elizaOS Plugin"
+description: "Add plugin-prflght to your elizaOS agent to automatically firewall every transaction and inject live policy data into prompts."
 sidebarTitle: "elizaOS Plugin"
 ---
 
-The `@prflght/elizaos-plugin` package integrates Prflght directly into the elizaOS agent runtime. Once you add it to your character config, every transaction your agent sends is automatically intercepted and checked - no manual `firewall.check()` calls required. The plugin also injects your current policy and live protocol health data into every agent prompt so your agent can reason about its own limits.
+The `plugin-prflght` package integrates Prflght directly into the elizaOS agent runtime. Once you add it to your character config, every transaction your agent sends is automatically intercepted and checked - no manual `firewall.check()` calls required. The plugin also injects your current policy and live protocol health data into every agent prompt so your agent can reason about its own limits.
 
 ## What the plugin does
 
-The plugin registers two things with the elizaOS runtime:
+The plugin registers three things with the elizaOS runtime:
 
-- **Provider** - before each LLM call, the provider fetches your current Prflght policy and live protocol health status and injects them into the prompt context. Your agent can see its own spending limits, allowed programs, and the current TVL health of any DeFi protocols it might interact with.
-- **Service** - the service wraps the elizaOS wallet service to intercept every outgoing transaction. Each transaction is checked against Prflght before it is submitted, exactly as if you had called `firewall.check()` manually.
+- **Provider** - before each LLM call, injects current policy limits and live protocol health scores into the prompt context. Your agent can see its own spending limits, allowed programs, and the current TVL health of any DeFi protocols it might interact with.
+- **Service** - singleton `PrflghtService` accessible to other plugins via `runtime.getService('prflght')`.
+- **Wallet wrapping** - if a wallet service is registered, `init()` wraps `signAndSendTransaction` for transparent enforcement on every transaction regardless of which action triggered it.
 
 <Info>
   The prompt injection gives your agent real-time awareness of its own policy. This means the agent can decide not to attempt a transaction it knows will be denied, rather than trying and receiving a `FirewallDenyError`.
@@ -20,7 +21,9 @@ The plugin registers two things with the elizaOS runtime:
 ## Installation
 
 ```bash
-npm install @prflght/elizaos-plugin
+bun add plugin-prflght
+# or
+npm install plugin-prflght
 ```
 
 ## Setup
@@ -31,13 +34,25 @@ npm install @prflght/elizaos-plugin
   </Step>
 
   <Step title="Add the plugin to your character config">
-    Import `prfgltPlugin` and add it to the `plugins` array in your agent's character configuration:
+    Import `prflghtPlugin` and add it to the `plugins` array in your agent's character configuration. Add it last so wallet services from other plugins are already registered.
 
     ```typescript
-    import { prfgltPlugin } from '@prflght/elizaos-plugin'
+    import prflghtPlugin from 'plugin-prflght'
 
-    // In your agent character config:
-    plugins: [prfgltPlugin],
+    export const character: Character = {
+      name: 'MyDeFiAgent',
+      plugins: [
+        '@elizaos/plugin-sql',
+        '@elizaos/plugin-openai',
+        prflghtPlugin,
+      ],
+      settings: {
+        secrets: {
+          PRFLGHT_API_KEY: 'prflght_...',
+          PRFLGHT_AGENT_ID: '<your-agent-wallet-pubkey>',
+        },
+      },
+    }
     ```
   </Step>
 
@@ -46,7 +61,7 @@ npm install @prflght/elizaos-plugin
 
     ```bash
     PRFLGHT_API_KEY=<your api key from app.prflght.xyz>
-    PRFLGHT_API_URL=https://api.prflght.xyz
+    PRFLGHT_AGENT_ID=<your agent wallet public key>
     ```
 
     Get your API key from the **API Keys** section of [app.prflght.xyz](https://app.prflght.xyz).
@@ -56,3 +71,24 @@ npm install @prflght/elizaos-plugin
 <Note>
   No other code changes are needed. Once the plugin is registered and the environment variables are set, all transactions sent by your elizaOS agent are intercepted and firewall-checked automatically.
 </Note>
+
+## What gets checked
+
+Every transaction is evaluated against your agent's policy:
+
+- **Allowed programs** — transaction must only call approved program IDs
+- **Max notional** — per-tx USDC value cap
+- **Daily transfer limit** — cumulative daily spend ceiling
+- **Protocol health** — live TVL health for 12 Solana venues. Blocks if score drops below your threshold.
+- **Direct transfers** — blocks wallet-to-wallet transfers to defend against prompt injection
+
+## Accessing the service from other plugins
+
+```typescript
+import type { PrflghtService } from 'plugin-prflght'
+
+const svc = runtime.getService<PrflghtService>('prflght')
+if (svc) {
+  const result = await svc.firewall.check(txBase64)
+}
+```
