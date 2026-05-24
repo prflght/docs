@@ -1,87 +1,76 @@
 ---
-title: "Quick Start: Send Your First Protected Transaction"
-description: "Connect your wallet, set your agent policy, install the SDK, and send your first firewall-protected Solana transaction in under ten minutes."
+title: "Quick Start"
+description: "Get API key, configure policy, and integrate prflght into your agent — in under five minutes with an AI coding tool."
 ---
 
-<Steps>
-  <Step title="Connect your wallet">
-    Go to [app.prflght.xyz](https://app.prflght.xyz) and connect your Solana wallet (Phantom or Solflare). Sign the authentication message - this proves ownership of your wallet and creates your account. No password required.
-  </Step>
+<Warning>
+  **BYOW mode** — your agent holds its own keypair. prflght enforces policy off-chain and issues a signed on-chain attestation. The agent could bypass the SDK if compromised or prompt-injected. For production capital where hard guarantees matter, Managed Wallets (coming soon) move the key to a TEE so bypass is architecturally impossible.
+</Warning>
 
-  <Step title="Copy your API key">
-    After authenticating, open the **API Keys** section of the dashboard and copy your API key. This key authorizes all firewall checks made on behalf of your agent.
-  </Step>
+## 1. Get your API key
 
-  <Step title="Set your agent policy">
-    Open the **Policy** page on the dashboard and configure your rules:
+1. Go to [app.prflght.xyz](https://app.prflght.xyz) and connect your Solana wallet (Phantom or Solflare).
+2. Sign the authentication message — no password required.
+3. Open the **API Keys** section and copy your key.
 
-    - **Allowed programs** - select protocols your agent may interact with (Jupiter, Orca, Drift, etc.)
-    - **Max notional** - maximum USDC value per transaction
-    - **Daily transfer limit** - rolling 24-hour cap
-    - **Deny direct transfers** - block plain SOL/SPL transfers with no DeFi interaction (recommended)
+## 2. Configure your agent policy
 
-    Save the policy. Prflght applies it to every transaction your agent submits.
-  </Step>
+Open the **Policy** page on the dashboard and set your rules:
 
-  <Step title="Install the SDK">
-    <CodeGroup>
+- **Allowed programs** — protocol program IDs your agent may call (Jupiter, Orca, Drift, etc.)
+- **Max notional** — maximum USDC value per transaction
+- **Daily transfer limit** — rolling 24-hour cap
+- **Deny direct transfers** — blocks plain SOL/SPL transfers with no DeFi interaction (recommended — protects against prompt injection)
 
-    ```bash npm
-    npm install @prflght/sdk
+Save the policy. prflght applies it to every transaction your agent submits.
+
+## 3. Integrate — paste a prompt into your AI coding tool
+
+Open [Cursor](https://cursor.com), [Claude Code](https://claude.ai/code), or any AI coding tool and paste the prompt for your framework:
+
+<Tabs>
+  <Tab title="Custom SDK">
     ```
+    Read https://prflght.xyz/llms.txt and integrate prflght into this Solana agent.
 
-    ```bash bun
-    bun add @prflght/sdk
+    My API key: <PRFLGHT_API_KEY>
+    My agent wallet public key: <AGENT_PUBKEY>
+
+    Use @prflght/sdk. Add firewall.check() before every sendTransaction call.
+    Prepend result.instructions to the transaction before sending.
+    Throw on FirewallDenyError — do not submit blocked transactions.
     ```
-
-    </CodeGroup>
-  </Step>
-
-  <Step title="Initialize the Firewall client">
-    ```typescript
-    import { Firewall, FirewallDenyError } from '@prflght/sdk'
-
-    const firewall = new Firewall({
-      apiKey: process.env.PRFLGHT_API_KEY,
-      agentId: agentKeypair.publicKey.toBase58(), // your agent's wallet public key
-      // apiUrl defaults to https://api.prflght.xyz
-    })
+  </Tab>
+  <Tab title="elizaOS">
     ```
+    Read https://prflght.xyz/llms.txt and integrate prflght into this elizaOS agent.
 
-    Store your API key in an environment variable - never hardcode it.
-  </Step>
+    My API key: <PRFLGHT_API_KEY>
+    My agent wallet public key: <AGENT_PUBKEY>
 
-  <Step title="Check your transaction before sending">
-    ```typescript
-    try {
-      const result = await firewall.check(txBase64)
-      // Prepend attestation instructions to your transaction
-      const finalTx = buildTxWithIxs([...result.instructions, ...yourIxs])
-      await sendAndConfirm(finalTx)
-    } catch (err) {
-      if (err instanceof FirewallDenyError) {
-        console.error('Blocked:', err.reason)
-        // e.g. "notional $15,000 exceeds policy max $10,000"
-      }
-    }
+    Install plugin-prflght. Add prflghtPlugin to the plugins array in the character config — add it last.
+    Set PRFLGHT_API_KEY and PRFLGHT_AGENT_ID in .env. No other code changes needed.
     ```
+  </Tab>
+  <Tab title="Solana Agent Kit">
+    ```
+    Read https://prflght.xyz/llms.txt and integrate prflght into this Solana Agent Kit agent.
 
-    <Note>
-      You must prepend `result.instructions` to your transaction. The on-chain program verifies the attestation at execution time - transactions without it will fail.
-    </Note>
-  </Step>
-</Steps>
+    My API key: <PRFLGHT_API_KEY>
 
-## Environment variables
+    Install @prflght/sak-plugin. Find where SolanaAgentKit is instantiated.
+    Call agent.use(new PrflghtPlugin({ apiKey: process.env.PRFLGHT_API_KEY })) immediately after.
+    No other changes needed — all SAK actions are covered automatically.
+    ```
+  </Tab>
+</Tabs>
 
-```bash
-PRFLGHT_API_KEY=<your api key from the dashboard>
-```
+The AI assistant reads `llms.txt`, finds the right files in your codebase, and makes the changes. No manual steps required.
 
-## Next steps
+## Manual integration
 
-- [Policy reference](/concepts/policies) - full list of policy fields
-- [Protocol health](/concepts/protocol-health) - how health scores are computed
-- [elizaOS plugin](/integrations/elizaos-plugin) - drop-in integration for elizaOS agents
-- [Solana Agent Kit plugin](/integrations/solana-agent-kit) - drop-in integration for SAK agents
-- [For AI agents](/integrations/for-ai-agents) - ready-made system prompt and LLM context
+Prefer to integrate by hand? See the full guides:
+
+- [SDK integration](/integrations/sdk) — wrap any TypeScript agent
+- [elizaOS plugin](/integrations/elizaos-plugin) — drop-in plugin for elizaOS characters
+- [Solana Agent Kit plugin](/integrations/solana-agent-kit) — drop-in plugin for SAK agents

@@ -94,15 +94,15 @@ try {
 ### elizaOS plugin
 
 ```typescript
-import { prfgltPlugin } from '@prflght/elizaos-plugin'
+import prflghtPlugin from 'plugin-prflght'
 
-// In your character config:
-plugins: [prfgltPlugin],
+// In your character config — add last so wallet services are already registered:
+plugins: [...existingPlugins, prflghtPlugin],
 ```
 
 ```bash
-PRFLGHT_API_KEY=<your api key>
-PRFLGHT_API_URL=https://api.prflght.xyz
+PRFLGHT_API_KEY=<your api key from app.prflght.xyz>
+PRFLGHT_AGENT_ID=<agent wallet public key>
 ```
 
 Every transaction the elizaOS agent sends is intercepted automatically. No manual `check()` calls required. The plugin also injects your current policy and live protocol health into every LLM prompt.

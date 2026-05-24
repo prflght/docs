@@ -33,6 +33,12 @@ Prflght sits between your AI agent and the Solana blockchain. Before any transac
 
 Prflght ships native plugins for [elizaOS](/integrations/elizaos-plugin) and [Solana Agent Kit](/integrations/solana-agent-kit). If you use either framework, you can drop in the plugin without modifying your core agent logic.
 
+## Security model
+
+prflght currently operates in **BYOW mode** — your agent holds its own keypair. Policy enforcement is real: the off-chain risk engine evaluates every transaction and the on-chain program verifies the attestation. However, a compromised or prompt-injected agent could bypass the SDK and call `sendTransaction` directly without going through the firewall.
+
+For teams running production capital where bypass must be architecturally impossible, Managed Wallets (coming soon) move the private key to a TEE — the agent holds only an API key and cannot sign without prflght's approval.
+
 ## Next step
 
-Follow the [quickstart](/quickstart) to connect your wallet, configure your first agent policy, and send your first protected transaction in minutes.
+Follow the [quickstart](/quickstart) to connect your wallet, configure your first agent policy, and integrate in minutes using an AI coding tool.
